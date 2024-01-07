@@ -1,0 +1,24 @@
+Variable names must be strings of english letters.
+Variables must be assigned when initialized.
+Assignments take the form of: 
+    [variable] = [literal or variable]
+    [variable] = [literal or variable] [binary operator] [literal or variable]
+Valid binary operators are: +, -, *, /, >, <, >=, <=, ==, != 
+
+If statements are written as such:
+if ([condition]) {
+
+}
+else {
+
+}
+
+For loops are written as such:
+for ([integer value]) {
+
+}
+
+WILL DO FUNCTIONS LATER
+
+Functions are defined as such:
+function ()
