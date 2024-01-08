@@ -1,6 +1,6 @@
 #include <string>
 #include "parser.hpp"
 
-class parser {
-};
+Parser::Parser(std::string file_path) {
 
+}

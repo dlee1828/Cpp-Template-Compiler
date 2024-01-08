@@ -4,77 +4,115 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <stack>
+#include <set>
+#include <unordered_set>
 
 class SyntaxTree {
 private:
+    class Variables {
+    private:
+        using VariableMap = std::map<std::string, int>;
+        VariableMap variable_values;
+        using Scope = std::unordered_set<std::string>;
+        std::stack<Scope> scopes;
+
+    public:
+        Variables() : variable_values(VariableMap()), scopes(std::stack<Scope>()) {}
+        int get_variable_value(const std::string& variable_name);
+        void assign_variable_and_initialize_if_necessary(const std::string& variable_name, int value);
+        void enter_new_scope();
+        void exit_current_scope();
+    };
+
     enum SyntaxTreeNodeType {
         STATEMENT_SEQUENCE,
         OPERAND,
         RETURN,
+        ASSIGNMENT,
         BINARY_OPERATION,
         IF_ELSE,
-        LOOP
+        LOOP,
+        FUNCTION
     };
 
     struct SyntaxTreeNode {
-        virtual int evaluate () const = 0;
+        struct EvaluationResult {
+            int expression_value;
+            int return_value;
+            bool should_return;
+            EvaluationResult() : expression_value(0), return_value(0), should_return(false) {}
+        };
+        virtual EvaluationResult evaluate () const = 0;
         SyntaxTreeNodeType node_type;
-        SyntaxTreeNode(SyntaxTreeNodeType type) : node_type(type) {};
+        Variables& variables;
+        SyntaxTreeNode(SyntaxTreeNodeType type, Variables& variables) : node_type(type), variables(variables) {}
         virtual ~SyntaxTreeNode();
     };
 
     struct StatementSequenceNode : SyntaxTreeNode {
         const std::vector<SyntaxTreeNode*> statements;
-        StatementSequenceNode(const std::vector<SyntaxTreeNode*>& statements) : statements(statements), SyntaxTreeNode(STATEMENT_SEQUENCE) {};
-        int evaluate();
+        StatementSequenceNode(const std::vector<SyntaxTreeNode*>& statements, Variables& variables) : statements(statements), SyntaxTreeNode(STATEMENT_SEQUENCE, variables) {}
+        EvaluationResult evaluate();
     };
 
     enum OperandType {
         IDENTIFIER, LITERAL
     };
 
-
     struct OperandNode : SyntaxTreeNode {
         OperandType operand_type;
         std::string identifier_value;
         int literal_value;
-        const std::map<std::string, int>& variable_values;
-        OperandNode(OperandType operand_type, std::string identifier_value, const std::map<std::string, int>& variable_values) : operand_type(operand_type), identifier_value(identifier_value), variable_values(variable_values), SyntaxTreeNode(OPERAND) {};
-        OperandNode(OperandType operand_type, int literal_value, const std::map<std::string, int>& variable_values) : operand_type(operand_type), literal_value(literal_value), variable_values(variable_values), SyntaxTreeNode(OPERAND) {};
-        int evaluate();
+        OperandNode(OperandType operand_type, std::string identifier_value, Variables& variables) : operand_type(operand_type), identifier_value(identifier_value), SyntaxTreeNode(OPERAND, variables) {}
+        OperandNode(OperandType operand_type, int literal_value, Variables& variables) : operand_type(operand_type), literal_value(literal_value), SyntaxTreeNode(OPERAND, variables) {}
+        EvaluationResult evaluate();
     };
 
     struct ReturnNode : SyntaxTreeNode {
         const SyntaxTreeNode* value;
-        ReturnNode(const SyntaxTreeNode* value) : value(value), SyntaxTreeNode(RETURN) {};
-        int evaluate();
+        ReturnNode(const SyntaxTreeNode* value, Variables& variables) : value(value), SyntaxTreeNode(RETURN, variables) {}
+        EvaluationResult evaluate();
+    };
+
+    struct AssignmentNode : SyntaxTreeNode {
+        std::string variable_name;
+        SyntaxTreeNode* value;
+        EvaluationResult evaluate();
+        AssignmentNode(std::string variable_name, SyntaxTreeNode* value, Variables& variables) : variable_name(variable_name), value(value), SyntaxTreeNode(ASSIGNMENT, variables) {}
     };
 
     enum BinaryOperation {
         ADD, SUBTRACT, MULTIPLY, DIVIDE, MOD, LESS, LESS_EQUAL, GREATER, GREATER_EQUAL, EQUAL, NOT_EQUAL
     };
-
     struct BinaryOperationNode : SyntaxTreeNode {
         BinaryOperation operation;
         SyntaxTreeNode* left_operand;
         SyntaxTreeNode* right_operand;
-        BinaryOperationNode(BinaryOperation operation, SyntaxTreeNode* left_operand, SyntaxTreeNode* right_operand) : operation(operation), left_operand(left_operand), right_operand(right_operand), SyntaxTreeNode(BINARY_OPERATION) {};
-        int evaluate();
+        BinaryOperationNode(BinaryOperation operation, SyntaxTreeNode* left_operand, SyntaxTreeNode* right_operand, Variables& variables) : operation(operation), left_operand(left_operand), right_operand(right_operand), SyntaxTreeNode(BINARY_OPERATION, variables) {}
+        EvaluationResult evaluate();
     };
 
     struct IfElseNode : SyntaxTreeNode {
         SyntaxTreeNode* condition;
         SyntaxTreeNode* if_block;
         SyntaxTreeNode* else_block;
-        IfElseNode(SyntaxTreeNode* condition, SyntaxTreeNode* if_block, SyntaxTreeNode* else_block) : condition(condition), if_block(if_block), else_block(else_block), SyntaxTreeNode(IF_ELSE) {};
-        int evaluate();
+        IfElseNode(SyntaxTreeNode* condition, SyntaxTreeNode* if_block, SyntaxTreeNode* else_block, Variables& variables) : condition(condition), if_block(if_block), else_block(else_block), SyntaxTreeNode(IF_ELSE, variables) {}
+        EvaluationResult evaluate();
     };
 
     struct LoopNode : SyntaxTreeNode {
         SyntaxTreeNode* iterations; 
         SyntaxTreeNode* body;
-        LoopNode(SyntaxTreeNode* iterations, SyntaxTreeNode* body) : iterations(iterations), body(body), SyntaxTreeNode(LOOP) {};
-        int evaluate();
+        LoopNode(SyntaxTreeNode* iterations, SyntaxTreeNode* body, Variables& variables) : iterations(iterations), body(body), SyntaxTreeNode(LOOP, variables) {}
+        EvaluationResult evaluate();
+    };
+
+    struct FunctionNode : SyntaxTreeNode {
+        SyntaxTreeNode* body;
+        std::map<std::string, int> arguments;
+        FunctionNode(SyntaxTreeNode* body, std::map<std::string, int> arguments, Variables& variables) : body(body), arguments(arguments), SyntaxTreeNode(FUNCTION, variables) {}
+        EvaluationResult evaluate();
     };
 };
 

@@ -1,4 +1,4 @@
-target: main.cpp
-	@clang++ -std=c++17 main.cpp 
+target: main.cpp parser.cpp syntax-tree.cpp
+	@clang++ -std=c++20 main.cpp parser.cpp syntax-tree.cpp
 	@./a.out
 	@rm ./a.out

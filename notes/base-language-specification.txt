@@ -3,7 +3,7 @@ Variables must be assigned when initialized.
 Assignments take the form of: 
     [variable] = [literal or variable]
     [variable] = [literal or variable] [binary operator] [literal or variable]
-Valid binary operators are: +, -, *, /, >, <, >=, <=, ==, != 
+Valid binary operators are: +, -, *, /, %, >, <, >=, <=, ==, != 
 
 If statements are written as such:
 if ([condition]) {
@@ -18,7 +18,8 @@ for ([integer value]) {
 
 }
 
-WILL DO FUNCTIONS LATER
-
-Functions are defined as such:
-function ()
+Functions are defined as such, and can have any number of parameters, including 0
+function (a, b) {
+    a = a + 1
+    return a * b
+}

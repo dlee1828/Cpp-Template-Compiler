@@ -3,16 +3,18 @@
 
 #include "syntax-tree.hpp"
 #include <string>
+#include <fstream>
 
-class parser {
+class Parser {
 private:
     std::string file_path;
-    syntax_tree code_syntax_tree;
+    std::ifstream input;
+    SyntaxTree syntax_tree;
 
     void generate_synatx_tree();
 public:
-    parser(std::string file_path);
-    syntax_tree get_syntax_tree();
+    Parser(std::string file_path);
+    SyntaxTree get_syntax_tree();
 };
 
 #endif

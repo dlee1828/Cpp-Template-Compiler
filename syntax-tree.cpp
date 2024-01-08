@@ -1,65 +1,136 @@
 #include "syntax-tree.hpp"
 
-int SyntaxTree::StatementSequenceNode::evaluate() {
-    for (SyntaxTreeNode* node : statements) {
-        int value = node->evaluate();
-        if (node->node_type == RETURN) return value;
-    }
+int  SyntaxTree::Variables::get_variable_value(const std::string& variable_name) {
+    return variable_values[variable_name];
 }
 
-int SyntaxTree::OperandNode::evaluate() {
+void SyntaxTree::Variables::assign_variable_and_initialize_if_necessary(const std::string& variable_name, int value) {
+    bool need_to_initialize = (variable_values.find(variable_name) == variable_values.end());
+    variable_values[variable_name] = value;
+    if (need_to_initialize) scopes.top().insert(variable_name);
+}
+
+void SyntaxTree::Variables::enter_new_scope() {
+    Scope new_scope;
+    scopes.push(new_scope);
+}
+
+void SyntaxTree::Variables::exit_current_scope() {
+    Scope current_scope = scopes.top();
+    for (std::string variable_name : current_scope) {
+        variable_values.erase(variable_values.find(variable_name));
+    }
+    scopes.pop();
+}
+
+SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::StatementSequenceNode::evaluate() {
+    EvaluationResult result;
+    for (SyntaxTreeNode* node : statements) {
+        EvaluationResult node_result = node->evaluate();
+        if (node_result.should_return) {
+            result.return_value =  node_result.return_value;
+            result.should_return = true;
+            return result;
+        }
+    }
+    return result;
+}
+
+SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::OperandNode::evaluate() {
+    EvaluationResult result;
     switch (operand_type) {
         case IDENTIFIER:
-            return variable_values.at(identifier_value);
+            result.expression_value = variables.get_variable_value(identifier_value);
         case LITERAL:
-            return literal_value;
+            result.expression_value = literal_value;
     }
+    return result;
 }
 
-int SyntaxTree::ReturnNode::evaluate() {
-    return value->evaluate();    
+SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::ReturnNode::evaluate() {
+    EvaluationResult result;
+    result.return_value = value->evaluate().expression_value;
+    result.should_return = true;
+    return result;
 }
 
+SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::AssignmentNode::evaluate() {
+    EvaluationResult result;
+    int assignment_value = value->evaluate().expression_value;
+    variables.assign_variable_and_initialize_if_necessary(variable_name, assignment_value);
+    result.expression_value = 1;
+    return result;
+}
 
-int SyntaxTree::BinaryOperationNode::evaluate() {
-    int left_value = left_operand->evaluate();
-    int right_value = right_operand->evaluate();
+SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::BinaryOperationNode::evaluate() {
+    EvaluationResult result;
+    int left_value = left_operand->evaluate().expression_value;
+    int right_value = right_operand->evaluate().expression_value;
+
+    int expression_value = 0; 
     switch(operation) {
         case ADD:
-            return left_value + right_value;
+            expression_value = left_value + right_value;
         case SUBTRACT:
-            return left_value - right_value;
+            expression_value = left_value - right_value;
         case MULTIPLY:
-            return left_value * right_value;
+            expression_value = left_value * right_value;
         case DIVIDE:
-            return left_value / right_value;
+            expression_value = left_value / right_value;
         case MOD:
-            return left_value % right_value;
+            expression_value = left_value % right_value;
         case LESS:
-            return left_value < right_value;
+            expression_value = left_value < right_value;
         case LESS_EQUAL:
-            return left_value <= right_value;
+            expression_value = left_value <= right_value;
         case GREATER:
-            return left_value > right_value;
+            expression_value = left_value > right_value;
         case GREATER_EQUAL:
-            return left_value >= right_value;
+            expression_value = left_value >= right_value;
         case EQUAL:
-            return left_value == right_value;
+            expression_value = left_value == right_value;
         case NOT_EQUAL:
-            return left_value != right_value;
+            expression_value = left_value != right_value;
     }
+
+    result.expression_value = expression_value;
+    return result;
 }
 
-int SyntaxTree::IfElseNode::evaluate() {
-    int condition_value = condition->evaluate();
+SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::IfElseNode::evaluate() {
+    variables.enter_new_scope();
+    int condition_value = condition->evaluate().expression_value;
     if (condition_value) return if_block->evaluate();
     else return else_block->evaluate();
+    variables.exit_current_scope();
 }
 
-int SyntaxTree::LoopNode::evaluate() {
-    int iterations_value = iterations->evaluate();
+SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::LoopNode::evaluate() {
+    variables.enter_new_scope();
+    EvaluationResult result;
+    int iterations_value = iterations->evaluate().expression_value;
     for (int i = 0; i < iterations_value; i++) {
-        body->evaluate();
+        EvaluationResult current_iteration_result = body->evaluate();
+        if (current_iteration_result.should_return) {
+            result.should_return = true;
+            result.return_value = current_iteration_result.return_value;
+        }
     }
-    return 0;
+    variables.exit_current_scope();
+    return result;
+}
+
+SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::FunctionNode::evaluate() {
+    variables.enter_new_scope();
+
+    for (std::pair<std::string, int> argument : arguments) {
+        std::string& variable_name = argument.first;
+        int value = argument.second; 
+        variables.assign_variable_and_initialize_if_necessary(variable_name, value);
+    }
+
+    EvaluationResult result = body->evaluate();
+
+    variables.exit_current_scope();
+    return result;
 }
