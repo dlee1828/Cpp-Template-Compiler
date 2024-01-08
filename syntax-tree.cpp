@@ -1,21 +1,21 @@
 #include "syntax-tree.hpp"
 
-int  SyntaxTree::Variables::get_variable_value(const std::string& variable_name) {
+int  Variables::get_variable_value(const std::string& variable_name) {
     return variable_values[variable_name];
 }
 
-void SyntaxTree::Variables::assign_variable_and_initialize_if_necessary(const std::string& variable_name, int value) {
+void Variables::assign_variable_and_initialize_if_necessary(const std::string& variable_name, int value) {
     bool need_to_initialize = (variable_values.find(variable_name) == variable_values.end());
     variable_values[variable_name] = value;
     if (need_to_initialize) scopes.top().insert(variable_name);
 }
 
-void SyntaxTree::Variables::enter_new_scope() {
+void Variables::enter_new_scope() {
     Scope new_scope;
     scopes.push(new_scope);
 }
 
-void SyntaxTree::Variables::exit_current_scope() {
+void Variables::exit_current_scope() {
     Scope current_scope = scopes.top();
     for (std::string variable_name : current_scope) {
         variable_values.erase(variable_values.find(variable_name));
@@ -23,7 +23,7 @@ void SyntaxTree::Variables::exit_current_scope() {
     scopes.pop();
 }
 
-SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::StatementSequenceNode::evaluate() {
+SyntaxTreeNode::EvaluationResult StatementSequenceNode::evaluate() {
     EvaluationResult result;
     for (SyntaxTreeNode* node : statements) {
         EvaluationResult node_result = node->evaluate();
@@ -36,7 +36,7 @@ SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::StatementSequenceNode::
     return result;
 }
 
-SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::OperandNode::evaluate() {
+SyntaxTreeNode::EvaluationResult OperandNode::evaluate() {
     EvaluationResult result;
     switch (operand_type) {
         case IDENTIFIER:
@@ -47,14 +47,14 @@ SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::OperandNode::evaluate()
     return result;
 }
 
-SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::ReturnNode::evaluate() {
+SyntaxTreeNode::EvaluationResult ReturnNode::evaluate() {
     EvaluationResult result;
     result.return_value = value->evaluate().expression_value;
     result.should_return = true;
     return result;
 }
 
-SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::AssignmentNode::evaluate() {
+SyntaxTreeNode::EvaluationResult AssignmentNode::evaluate() {
     EvaluationResult result;
     int assignment_value = value->evaluate().expression_value;
     variables.assign_variable_and_initialize_if_necessary(variable_name, assignment_value);
@@ -62,7 +62,7 @@ SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::AssignmentNode::evaluat
     return result;
 }
 
-SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::BinaryOperationNode::evaluate() {
+SyntaxTreeNode::EvaluationResult BinaryOperationNode::evaluate() {
     EvaluationResult result;
     int left_value = left_operand->evaluate().expression_value;
     int right_value = right_operand->evaluate().expression_value;
@@ -97,7 +97,7 @@ SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::BinaryOperationNode::ev
     return result;
 }
 
-SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::IfElseNode::evaluate() {
+SyntaxTreeNode::EvaluationResult IfElseNode::evaluate() {
     variables.enter_new_scope();
     int condition_value = condition->evaluate().expression_value;
     if (condition_value) return if_block->evaluate();
@@ -105,7 +105,7 @@ SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::IfElseNode::evaluate() 
     variables.exit_current_scope();
 }
 
-SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::LoopNode::evaluate() {
+SyntaxTreeNode::EvaluationResult LoopNode::evaluate() {
     variables.enter_new_scope();
     EvaluationResult result;
     int iterations_value = iterations->evaluate().expression_value;
@@ -120,7 +120,7 @@ SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::LoopNode::evaluate() {
     return result;
 }
 
-SyntaxTree::SyntaxTreeNode::EvaluationResult SyntaxTree::FunctionNode::evaluate() {
+SyntaxTreeNode::EvaluationResult FunctionNode::evaluate() {
     variables.enter_new_scope();
 
     for (std::pair<std::string, int> argument : arguments) {
