@@ -23,6 +23,35 @@ void Variables::exit_current_scope() {
     scopes.pop();
 }
 
+
+std::string get_node_type_string_from_enum(SyntaxTreeNodeType type) {
+    switch (type) {
+        case STATEMENT_SEQUENCE:
+            return "STATEMENT_SEQUENCE";
+        case OPERAND:
+            return "OPERAND";
+        case RETURN:
+            return "RETURN";
+        case ASSIGNMENT:
+            return "ASSIGNMENT";
+        case BINARY_OPERATION:
+            return "BINARY_OPERATION";
+        case IF_ELSE:
+            return "IF_ELSE";
+        case LOOP:
+            return "LOOP";
+        case FUNCTION:
+            return "FUNCTION";
+    }
+}
+
+std::ostream& operator<<(std::ostream& o, const SyntaxTreeNode* node) {
+    std::string node_type_string = get_node_type_string_from_enum(node->node_type);
+    o << node_type_string << " NODE";
+    return o;
+}
+
+
 SyntaxTreeNode::EvaluationResult StatementSequenceNode::evaluate() {
     EvaluationResult result;
     for (SyntaxTreeNode* node : statements) {

@@ -7,6 +7,7 @@
 #include <stack>
 #include <set>
 #include <unordered_set>
+#include <iostream>
 class Variables {
 private:
     using VariableMap = std::map<std::string, int>;
@@ -21,6 +22,7 @@ public:
     void enter_new_scope();
     void exit_current_scope();
 };
+
 
 enum SyntaxTreeNodeType {
     STATEMENT_SEQUENCE,
@@ -45,6 +47,8 @@ struct SyntaxTreeNode {
     Variables& variables;
     SyntaxTreeNode(SyntaxTreeNodeType type, Variables& variables) : node_type(type), variables(variables) {}
 };
+
+std::ostream& operator<<(std::ostream& o, const SyntaxTreeNode* node);
 
 struct StatementSequenceNode : SyntaxTreeNode {
     std::vector<SyntaxTreeNode*> statements;
