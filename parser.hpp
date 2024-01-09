@@ -5,6 +5,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <sstream>
 
 class Parser {
 private:
@@ -16,27 +17,28 @@ private:
     int total_lines;
 
     enum StatementNodeType {
-        RETURN,
         ASSIGNMENT,
+        RETURN,
         IF_ELSE,
         LOOP,
         FUNCTION
     };
 
+    void preprocess_input_file_string(std::string& input_file_string);
     void read_input_file_and_parse_into_tokens();
     bool token_is_variable_name(const Token& token);
     int get_literal_value_from_token(const Token& token);
     BinaryOperation binary_operation_token_to_enum(const Token& token);
-    StatementNodeType get_next_statement_node_type(int& line_num);
+    StatementNodeType get_next_statement_node_type(int& start_line);
     SyntaxTreeNode* parse_operand_token(const Token& token);
-    SyntaxTreeNode* parse_binary_operation_node(int& line_num);
-    SyntaxTreeNode* parse_assignment_node(int& line_num);
-    SyntaxTreeNode* parse_single_statement_node(int& line_num);
-    SyntaxTreeNode* parse_block(int& line_num);
+    SyntaxTreeNode* parse_assignment_node(int& start_line);
+    SyntaxTreeNode* parse_if_else_node(int& start_line);
+    SyntaxTreeNode* parse_single_statement_node(int& start_line);
+    SyntaxTreeNode* parse_block(int& start_line, int& end_line);
     void generate_syntax_tree();
 
 public:
-    Parser(std::string input_file_path) : input_file_path(input_file_path), variables(Variables()) {};
+    Parser(std::string input_file_path) : input_file_path(input_file_path), variables(Variables()) {}
     void parse_file();
 };
 
