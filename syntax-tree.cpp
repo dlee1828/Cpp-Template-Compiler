@@ -1,6 +1,6 @@
 #include "syntax-tree.hpp"
 
-int  Variables::get_variable_value(const std::string& variable_name) {
+int Variables::get_variable_value(const std::string& variable_name) {
     return variable_values[variable_name];
 }
 
@@ -161,5 +161,10 @@ SyntaxTreeNode::EvaluationResult FunctionNode::evaluate() {
     EvaluationResult result = body->evaluate();
 
     variables.exit_current_scope();
+    return result;
+}
+
+SyntaxTreeNode::EvaluationResult EmptyNode::evaluate() {
+    EvaluationResult result;
     return result;
 }

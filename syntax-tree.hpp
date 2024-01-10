@@ -32,7 +32,8 @@ enum SyntaxTreeNodeType {
     BINARY_OPERATION,
     IF_ELSE,
     LOOP,
-    FUNCTION
+    FUNCTION,
+    EMPTY
 };
 
 struct SyntaxTreeNode {
@@ -112,6 +113,11 @@ struct FunctionNode : SyntaxTreeNode {
     SyntaxTreeNode* body;
     std::map<std::string, int> arguments;
     FunctionNode(SyntaxTreeNode* body, std::map<std::string, int> arguments, Variables& variables) : body(body), arguments(arguments), SyntaxTreeNode(FUNCTION, variables) {}
+    EvaluationResult evaluate();
+};
+
+struct EmptyNode : SyntaxTreeNode {
+    EmptyNode(Variables& variables) : SyntaxTreeNode(EMPTY, variables) {}
     EvaluationResult evaluate();
 };
 
