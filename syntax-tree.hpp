@@ -33,6 +33,7 @@ enum SyntaxTreeNodeType {
     IF_ELSE,
     LOOP,
     FUNCTION,
+    PRINT,
     EMPTY
 };
 
@@ -113,6 +114,12 @@ struct FunctionNode : SyntaxTreeNode {
     SyntaxTreeNode* body;
     std::map<std::string, int> arguments;
     FunctionNode(SyntaxTreeNode* body, std::map<std::string, int> arguments, Variables& variables) : body(body), arguments(arguments), SyntaxTreeNode(FUNCTION, variables) {}
+    EvaluationResult evaluate();
+};
+
+struct PrintNode : SyntaxTreeNode {
+    SyntaxTreeNode* value; 
+    PrintNode(SyntaxTreeNode* value, Variables& variables) : value(value), SyntaxTreeNode(PRINT, variables) {}
     EvaluationResult evaluate();
 };
 

@@ -159,6 +159,7 @@ SyntaxTreeNode::EvaluationResult FunctionNode::evaluate() {
     }
 
     EvaluationResult result = body->evaluate();
+    result.should_return = false;
 
     variables.exit_current_scope();
     return result;
@@ -167,4 +168,13 @@ SyntaxTreeNode::EvaluationResult FunctionNode::evaluate() {
 SyntaxTreeNode::EvaluationResult EmptyNode::evaluate() {
     EvaluationResult result;
     return result;
+}
+
+SyntaxTreeNode::EvaluationResult PrintNode::evaluate() {
+    EvaluationResult value_result = value->evaluate();
+    int to_print = 0;
+    if (value->node_type == FUNCTION) to_print = value_result.return_value;
+    else to_print = value_result.expression_value;
+    std::cout << to_print << std::endl;
+    return EvaluationResult();
 }
