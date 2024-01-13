@@ -117,8 +117,8 @@ struct LoopNode : SyntaxTreeNode {
 
 struct FunctionNode : SyntaxTreeNode {
     SyntaxTreeNode* body;
-    std::map<std::string, int> arguments;
-    FunctionNode(SyntaxTreeNode* body, std::map<std::string, int> arguments, Variables& variables) : body(body), arguments(arguments), SyntaxTreeNode(FUNCTION, variables) {}
+    std::map<std::string, SyntaxTreeNode*> arguments;
+    FunctionNode(SyntaxTreeNode* body, std::map<std::string, SyntaxTreeNode*> arguments, Variables& variables) : body(body), arguments(arguments), SyntaxTreeNode(FUNCTION, variables) {}
     EvaluationResult evaluate();
 };
 

@@ -1,8 +1,8 @@
 #include <iostream>
-#include "parser.hpp"
+#include "interpreter.hpp"
 
 int main() {
-    Parser p("./sample.txt");
+    Interpreter p("./sample.txt");
     p.parse_file();
     
     return 0;

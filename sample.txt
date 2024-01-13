@@ -1,8 +1,6 @@
-a = 5
-if (a > 7) {
-    a = a + 500
+N = 2
+for (N) {
+    for (N) {
+        print(1)
+    }
 }
-else {
-    a = a - 500    
-}
-print(a)

@@ -194,9 +194,12 @@ SyntaxTreeNode::EvaluationResult LoopNode::evaluate() {
 SyntaxTreeNode::EvaluationResult FunctionNode::evaluate() {
     variables.enter_new_scope();
 
-    for (std::pair<std::string, int> argument : arguments) {
+    for (std::pair<std::string, SyntaxTreeNode*> argument : arguments) {
         std::string& variable_name = argument.first;
-        int value = argument.second; 
+        SyntaxTreeNode* node = argument.second; 
+
+        int value = node->evaluate().expression_value;
+
         variables.assign_variable_and_initialize_if_necessary(variable_name, value);
     }
 
