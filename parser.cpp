@@ -5,6 +5,13 @@
 #include <iostream>
 #include "debug.hpp"
 
+std::ostream& operator<<(std::ostream& o, Parser::Line& line) {
+    for (Parser::Token token : line) {
+        o << token << " ";
+    }
+    o << std::endl;
+    return o;
+}
 
 void Parser::preprocess_input_string(std::string& input_string) {
     std::string temp = input_string;
@@ -75,13 +82,6 @@ void Parser::read_input_file_and_parse_into_tokens() {
         lines.push_back(current_line);
     }
 
-    // for (auto line : lines) {
-    //     for (auto token : line) {
-    //         std::cout << token << "(" << token.size() << ")" << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-
     total_lines = lines.size();
 }
 
@@ -97,6 +97,7 @@ Parser::StatementNodeType Parser::get_next_statement_node_type(int& start_line) 
     else if (num_tokens > 0 && line[0] == "if") return IF_ELSE;
     else if (num_tokens > 0 && line[0] == "for") return LOOP;
     else if (num_tokens > 0 && line[0] == "return") return RETURN;
+    else if (line[0] == "print") return PRINT;
     else {
         std::cerr << "Error: unidentified unit node type" << std::endl;
         return ASSIGNMENT;
@@ -131,6 +132,7 @@ int Parser::get_literal_value_from_token(const Token& token) {
 }
 
 SyntaxTreeNode* Parser::parse_operand_token(const Token& token) {
+    print("PARSING OPERAND TOKEN FOR TOKEN", token);
     OperandType operand_type = token_is_variable_name(token) ? IDENTIFIER : LITERAL;
     SyntaxTreeNode* operand_node = nullptr;
     if (operand_type == LITERAL) operand_node = new OperandNode(operand_type, get_literal_value_from_token(token), variables);
@@ -203,6 +205,18 @@ SyntaxTreeNode* Parser::parse_if_else_node(int& start_line) {
     return new IfElseNode(binary_operation_node, if_block_node, else_block_node, variables);
 }
 
+SyntaxTreeNode* Parser::parse_print_node(int& start_line) {
+    Line& line = lines[start_line];
+    print("PARSING PRINT NODE FOR LINE", line);
+    Token print_value_token = line[2];
+    SyntaxTreeNode* print_value_node = parse_operand_token(print_value_token);
+    print("SUCCESSFULLY PARSED OPERAND TOKEN IN PRINT NODE FOR LINE", line);
+    SyntaxTreeNode* node = new PrintNode(print_value_node, variables);
+    print("SUCCESSFULLY INSTANTIATED NEW PRINT NODE");
+    start_line++;
+    return node;
+}
+
 SyntaxTreeNode* Parser::parse_single_statement_node(int& start_line) {
     Parser::StatementNodeType unit_node_type = get_next_statement_node_type(start_line);
     SyntaxTreeNode* node = nullptr;
@@ -211,7 +225,10 @@ SyntaxTreeNode* Parser::parse_single_statement_node(int& start_line) {
             return parse_assignment_node(start_line);
         case StatementNodeType::IF_ELSE:
             return parse_if_else_node(start_line);
+        case StatementNodeType::PRINT:
+            return parse_print_node(start_line);
     }
+    print("ERROR: SINGLE STATEMENT NODE = NULLPTR");
     return nullptr;
 }
 
@@ -219,7 +236,7 @@ SyntaxTreeNode* Parser::parse_block(int& start_line, int& end_line) {
     std::vector<SyntaxTreeNode*> nodes;
     while (start_line <= end_line) {
         SyntaxTreeNode* node = parse_single_statement_node(start_line);
-        std::cout << node << std::endl;
+        print("DONE PARSING NODE OF TYPE", get_node_type_string_from_enum(node->node_type));
         nodes.push_back(node);
     }
     if (nodes.size() == 1) return nodes[0];
@@ -230,5 +247,6 @@ void Parser::parse_file() {
     read_input_file_and_parse_into_tokens();
     int start = 0;
     int end = total_lines - 1;
-    parse_block(start, end);
+    SyntaxTreeNode* node = parse_block(start, end);
+    node->evaluate();
 }

@@ -14,14 +14,19 @@ private:
     VariableMap variable_values;
     using Scope = std::unordered_set<std::string>;
     std::stack<Scope> scopes;
+    friend std::ostream& operator<<(std::ostream& o, Variables& variables);
 
 public:
-    Variables() : variable_values(VariableMap()), scopes(std::stack<Scope>()) {}
+    Variables() : variable_values(VariableMap()), scopes(std::stack<Scope>()) {
+        scopes.push(Scope());
+    }
     int get_variable_value(const std::string& variable_name);
     void assign_variable_and_initialize_if_necessary(const std::string& variable_name, int value);
     void enter_new_scope();
     void exit_current_scope();
 };
+
+std::ostream& operator<<(std::ostream& o, Variables& variables);
 
 
 enum SyntaxTreeNodeType {
@@ -127,5 +132,7 @@ struct EmptyNode : SyntaxTreeNode {
     EmptyNode(Variables& variables) : SyntaxTreeNode(EMPTY, variables) {}
     EvaluationResult evaluate();
 };
+
+std::string get_node_type_string_from_enum(SyntaxTreeNodeType type);
 
 #endif

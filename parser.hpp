@@ -6,13 +6,14 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <iostream>
 
 class Parser {
 private:
-    std::string input_file_path;
-    Variables variables;
     using Token = std::string;
     using Line = std::vector<Token>;
+    std::string input_file_path;
+    Variables variables;
     std::vector<Line> lines;
     int total_lines;
 
@@ -22,8 +23,11 @@ private:
         IF_ELSE,
         LOOP,
         FUNCTION,
-        EMPTY
+        EMPTY,
+        PRINT
     };
+
+    friend std::ostream& operator<<(std::ostream& o, Line& line);
 
     void preprocess_input_string(std::string& input_string);
     void read_input_file_and_parse_into_tokens();
@@ -37,13 +41,15 @@ private:
     int get_closing_brace_line(int opening_brace_line);
     SyntaxTreeNode* parse_braces_block(int& start_line);
     SyntaxTreeNode* parse_if_else_node(int& start_line);
+    SyntaxTreeNode* parse_print_node(int& start_line);
     SyntaxTreeNode* parse_single_statement_node(int& start_line);
     SyntaxTreeNode* parse_block(int& start_line, int& end_line);
     void generate_syntax_tree();
-
 public:
     Parser(std::string input_file_path) : input_file_path(input_file_path), variables(Variables()) {}
     void parse_file();
 };
+
+std::ostream& operator<<(std::ostream& o, Parser::Line& line);
 
 #endif
