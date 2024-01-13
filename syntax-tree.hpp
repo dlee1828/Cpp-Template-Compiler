@@ -39,7 +39,8 @@ enum SyntaxTreeNodeType {
     LOOP,
     FUNCTION_CALL,
     PRINT,
-    EMPTY
+    EMPTY,
+    WHILE
 };
 
 struct SyntaxTreeNode {
@@ -90,7 +91,7 @@ struct AssignmentNode : SyntaxTreeNode {
 };
 
 enum BinaryOperation {
-    ADD, SUBTRACT, MULTIPLY, DIVIDE, MOD, LESS, LESS_EQUAL, GREATER, GREATER_EQUAL, EQUAL, NOT_EQUAL
+    ADD, SUBTRACT, MULTIPLY, DIVIDE, MOD, LESS, LESS_EQUAL, GREATER, GREATER_EQUAL, EQUAL, NOT_EQUAL, AND, OR
 };
 struct BinaryOperationNode : SyntaxTreeNode {
     BinaryOperation operation;
@@ -130,6 +131,13 @@ struct PrintNode : SyntaxTreeNode {
 
 struct EmptyNode : SyntaxTreeNode {
     EmptyNode(Variables& variables) : SyntaxTreeNode(EMPTY, variables) {}
+    EvaluationResult evaluate();
+};
+
+struct WhileNode : SyntaxTreeNode {
+    SyntaxTreeNode* condition;
+    SyntaxTreeNode* body;
+    WhileNode(Variables& variables, SyntaxTreeNode* condition, SyntaxTreeNode* body) : condition(condition), body(body), SyntaxTreeNode(WHILE, variables) {}
     EvaluationResult evaluate();
 };
 

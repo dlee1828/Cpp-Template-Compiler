@@ -32,7 +32,8 @@ private:
         LOOP,
         LONE_FUNCTION_CALL,
         FUNCTION_DEFINITION,
-        PRINT
+        PRINT,
+        WHILE
     };
 
     enum AssignmentValueType {
@@ -48,6 +49,8 @@ private:
         Token name;
     };
 
+    SyntaxTreeNode* parse_while_node(int& start_line);
+    int get_closing_parenthesis_index(Line& line);
     SyntaxTreeNode* parse_assignment_value_node(int start_line, int start_index, int end_index);
     SyntaxTreeNode* parse_return_node(int& start_line);
     SyntaxTreeNode* parse_lone_function_call_node(int& start_line);

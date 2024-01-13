@@ -110,13 +110,14 @@ SyntaxTreeNode* Interpreter::parse_lone_function_call_node(int& start_line) {
 Interpreter::StatementNodeType Interpreter::get_next_statement_node_type(int& start_line) {
     Line& line = lines[start_line];
     int num_tokens = line.size();
-    if (num_tokens > 1 && line[1] == "=") return ASSIGNMENT;
-    else if (line[0] == "if") return IF_ELSE;
-    else if (line[0] == "for") return LOOP;
-    else if (line[0] == "return") return RETURN;
-    else if (line[0] == "print") return PRINT;
-    else if (line[0] == "function") return FUNCTION_DEFINITION;
-    else if (line_is_lone_function_call(line)) return LONE_FUNCTION_CALL;
+    if (num_tokens > 1 && line[1] == "=") return StatementNodeType::ASSIGNMENT;
+    else if (line[0] == "if") return StatementNodeType::IF_ELSE;
+    else if (line[0] == "for") return StatementNodeType::LOOP;
+    else if (line[0] == "return") return StatementNodeType::RETURN;
+    else if (line[0] == "print") return StatementNodeType::PRINT;
+    else if (line[0] == "function") return StatementNodeType::FUNCTION_DEFINITION;
+    else if (line[0] == "while") return StatementNodeType::WHILE;
+    else if (line_is_lone_function_call(line)) return StatementNodeType::LONE_FUNCTION_CALL;
     else {
         std::cerr << "Error: unidentified unit node type" << std::endl;
         return ASSIGNMENT;
@@ -135,6 +136,8 @@ BinaryOperation Interpreter::binary_operation_token_to_enum(const Token& token) 
     else if (token == ">=") return BinaryOperation::GREATER_EQUAL;
     else if (token == "==") return BinaryOperation::EQUAL;
     else if (token == "!=") return BinaryOperation::NOT_EQUAL;
+    else if (token == "&&") return BinaryOperation::AND;
+    else if (token == "||") return BinaryOperation::OR;
 
     std::cerr << "Error: unidentified operation token" << std::endl; 
     return BinaryOperation::ADD;
@@ -257,7 +260,6 @@ int Interpreter::get_closing_brace_line(int opening_brace_line) {
     int num_open_braces = 1;
     int i = opening_brace_line + 1;
     while (i < total_lines) {
-        print(i);
         if (lines[i][0] == "{") num_open_braces++;
         else if (lines[i][0] == "}") num_open_braces--;
         if (num_open_braces == 0) return i;
@@ -294,11 +296,19 @@ SyntaxTreeNode* Interpreter::parse_if_else_node(int& start_line) {
     return new IfElseNode(binary_operation_node, if_block_node, else_block_node, variables);
 }
 
+int Interpreter::get_closing_parenthesis_index(Line& line) {
+    for (int i = 0; i < line.size(); i++) {
+        if (line[i] == ")") return i;
+    }
+    std::cerr << "Error: did not find closing parenthesis when expected to" << std::endl;
+    return -1;
+}
+
 SyntaxTreeNode* Interpreter::parse_print_node(int& start_line) {
     Line& line = lines[start_line];
     print("PARSING PRINT NODE FOR LINE", line);
-    Token print_value_token = line[2];
-    SyntaxTreeNode* print_value_node = parse_operand_token(print_value_token);
+    int closing_parenthesis_index = get_closing_parenthesis_index(line);
+    SyntaxTreeNode* print_value_node = parse_assignment_value_node(start_line, 2, closing_parenthesis_index - 1);
     print("SUCCESSFULLY PARSED OPERAND TOKEN IN PRINT NODE FOR LINE", line);
     SyntaxTreeNode* node = new PrintNode(print_value_node, variables);
     print("SUCCESSFULLY INSTANTIATED NEW PRINT NODE");
@@ -350,6 +360,14 @@ SyntaxTreeNode* Interpreter::parse_return_node(int& start_line) {
     return new ReturnNode(value_node, variables);
 }
 
+SyntaxTreeNode* Interpreter::parse_while_node(int& start_line) {
+    Line& line = lines[start_line];
+    SyntaxTreeNode* condition_node = parse_binary_operation_node(line[2], line[3], line[4]);
+    start_line++;
+    SyntaxTreeNode* body_node = parse_braces_block(start_line);
+    return new WhileNode(variables, condition_node, body_node);
+}
+
 SyntaxTreeNode* Interpreter::parse_single_statement_node(int& start_line) {
     Interpreter::StatementNodeType unit_node_type = get_next_statement_node_type(start_line);
     SyntaxTreeNode* node = nullptr;
@@ -368,6 +386,8 @@ SyntaxTreeNode* Interpreter::parse_single_statement_node(int& start_line) {
             return parse_lone_function_call_node(start_line);
         case StatementNodeType::RETURN:
             return parse_return_node(start_line);
+        case StatementNodeType::WHILE:
+            return parse_while_node(start_line);
 
     }
     print("ERROR: SINGLE STATEMENT NODE = NULLPTR");

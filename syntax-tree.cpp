@@ -60,6 +60,8 @@ std::string get_node_type_string_from_enum(SyntaxTreeNodeType type) {
             return "PRINT";
         case SyntaxTreeNodeType::EMPTY:
             return "EMPTY";
+        case SyntaxTreeNodeType::WHILE:
+            return "WHILE";
     }
 }
 
@@ -132,38 +134,44 @@ SyntaxTreeNode::EvaluationResult BinaryOperationNode::evaluate() {
 
     int expression_value = 0; 
     switch(operation) {
-        case ADD:
+        case BinaryOperation::ADD:
             expression_value = left_value + right_value;
             break;
-        case SUBTRACT:
+        case BinaryOperation::SUBTRACT:
             expression_value = left_value - right_value;
             break;
-        case MULTIPLY:
+        case BinaryOperation::MULTIPLY:
             expression_value = left_value * right_value;
             break;
-        case DIVIDE:
+        case BinaryOperation::DIVIDE:
             expression_value = left_value / right_value;
             break;
-        case MOD:
+        case BinaryOperation::MOD:
             expression_value = left_value % right_value;
             break;
-        case LESS:
+        case BinaryOperation::LESS:
             expression_value = left_value < right_value;
             break;
-        case LESS_EQUAL:
+        case BinaryOperation::LESS_EQUAL:
             expression_value = left_value <= right_value;
             break;
-        case GREATER:
+        case BinaryOperation::GREATER:
             expression_value = left_value > right_value;
             break;
-        case GREATER_EQUAL:
+        case BinaryOperation::GREATER_EQUAL:
             expression_value = left_value >= right_value;
             break;
-        case EQUAL:
+        case BinaryOperation::EQUAL:
             expression_value = left_value == right_value;
             break;
-        case NOT_EQUAL:
+        case BinaryOperation::NOT_EQUAL:
             expression_value = left_value != right_value;
+            break;
+        case BinaryOperation::AND:
+            expression_value = (left_value != 0) && (right_value != 0);
+            break;
+        case BinaryOperation::OR:
+            expression_value = (left_value != 0) || (right_value != 0);
             break;
     }
 
@@ -186,17 +194,18 @@ SyntaxTreeNode::EvaluationResult IfElseNode::evaluate() {
 }
 
 SyntaxTreeNode::EvaluationResult LoopNode::evaluate() {
-    variables.enter_new_scope();
     EvaluationResult result;
     int iterations_value = iterations->evaluate().expression_value;
     for (int i = 0; i < iterations_value; i++) {
+        variables.enter_new_scope();
         EvaluationResult current_iteration_result = body->evaluate();
         if (current_iteration_result.should_return) {
             result.should_return = true;
             result.return_value = current_iteration_result.return_value;
+            break;
         }
+        variables.exit_current_scope();
     }
-    variables.exit_current_scope();
     return result;
 }
 
@@ -233,4 +242,19 @@ SyntaxTreeNode::EvaluationResult PrintNode::evaluate() {
     else to_print = value_result.expression_value;
     std::cout << to_print << std::endl;
     return EvaluationResult();
+}
+
+SyntaxTreeNode::EvaluationResult WhileNode::evaluate() {
+    EvaluationResult result;
+    while (condition->evaluate().expression_value == 1) {
+        variables.enter_new_scope();
+        EvaluationResult current_iteration_result = body->evaluate();
+        if (current_iteration_result.should_return) {
+            result.should_return = true;
+            result.return_value = current_iteration_result.return_value;
+            break;
+        }
+        variables.exit_current_scope();
+    }
+    return result;
 }
