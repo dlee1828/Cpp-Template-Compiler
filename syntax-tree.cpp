@@ -52,8 +52,6 @@ std::string get_node_type_string_from_enum(SyntaxTreeNodeType type) {
             return "BINARY_OPERATION";
         case SyntaxTreeNodeType::IF_ELSE:
             return "IF_ELSE";
-        case SyntaxTreeNodeType::LOOP:
-            return "LOOP";
         case SyntaxTreeNodeType::FUNCTION_CALL:
             return "FUNCTION";
         case SyntaxTreeNodeType::PRINT:
@@ -193,22 +191,6 @@ SyntaxTreeNode::EvaluationResult IfElseNode::evaluate() {
     variables.exit_current_scope();
 }
 
-SyntaxTreeNode::EvaluationResult LoopNode::evaluate() {
-    EvaluationResult result;
-    int iterations_value = iterations->evaluate().expression_value;
-    for (int i = 0; i < iterations_value; i++) {
-        variables.enter_new_scope();
-        EvaluationResult current_iteration_result = body->evaluate();
-        if (current_iteration_result.should_return) {
-            result.should_return = true;
-            result.return_value = current_iteration_result.return_value;
-            break;
-        }
-        variables.exit_current_scope();
-    }
-    return result;
-}
-
 SyntaxTreeNode::EvaluationResult FunctionNode::evaluate() {
     print("EVALUATING FUNCTION NODE");
     variables.enter_new_scope();
@@ -219,6 +201,7 @@ SyntaxTreeNode::EvaluationResult FunctionNode::evaluate() {
 
         int value = node->evaluate().expression_value;
 
+        // TODO: FIX THIS
         variables.assign_variable_and_initialize_if_necessary(variable_name, value);
     }
 

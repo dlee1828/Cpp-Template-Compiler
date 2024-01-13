@@ -112,7 +112,6 @@ Interpreter::StatementNodeType Interpreter::get_next_statement_node_type(int& st
     int num_tokens = line.size();
     if (num_tokens > 1 && line[1] == "=") return StatementNodeType::ASSIGNMENT;
     else if (line[0] == "if") return StatementNodeType::IF_ELSE;
-    else if (line[0] == "for") return StatementNodeType::LOOP;
     else if (line[0] == "return") return StatementNodeType::RETURN;
     else if (line[0] == "print") return StatementNodeType::PRINT;
     else if (line[0] == "function") return StatementNodeType::FUNCTION_DEFINITION;
@@ -316,15 +315,6 @@ SyntaxTreeNode* Interpreter::parse_print_node(int& start_line) {
     return node;
 }
 
-SyntaxTreeNode* Interpreter::parse_loop_node(int& start_line) {
-    Line& line = lines[start_line];
-    Token iterations_token = line[2];
-    SyntaxTreeNode* iterations_node = parse_operand_token(iterations_token);
-    start_line++;
-    SyntaxTreeNode* body_node = parse_braces_block(start_line);
-    return new LoopNode(iterations_node, body_node, variables);
-}
-
 SyntaxTreeNode* Interpreter::parse_function_definition(int& start_line) {
     print("PARSING FUNCTION DEFINITION");
     Line& line = lines[start_line];
@@ -378,8 +368,6 @@ SyntaxTreeNode* Interpreter::parse_single_statement_node(int& start_line) {
             return parse_if_else_node(start_line);
         case StatementNodeType::PRINT:
             return parse_print_node(start_line);
-        case StatementNodeType::LOOP:
-            return parse_loop_node(start_line);
         case StatementNodeType::FUNCTION_DEFINITION:
             return parse_function_definition(start_line);
         case StatementNodeType::LONE_FUNCTION_CALL:

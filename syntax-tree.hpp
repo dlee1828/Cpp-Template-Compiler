@@ -36,7 +36,6 @@ enum SyntaxTreeNodeType {
     ASSIGNMENT,
     BINARY_OPERATION,
     IF_ELSE,
-    LOOP,
     FUNCTION_CALL,
     PRINT,
     EMPTY,
@@ -106,13 +105,6 @@ struct IfElseNode : SyntaxTreeNode {
     SyntaxTreeNode* if_block;
     SyntaxTreeNode* else_block;
     IfElseNode(SyntaxTreeNode* condition, SyntaxTreeNode* if_block, SyntaxTreeNode* else_block, Variables& variables) : condition(condition), if_block(if_block), else_block(else_block), SyntaxTreeNode(IF_ELSE, variables) {}
-    EvaluationResult evaluate();
-};
-
-struct LoopNode : SyntaxTreeNode {
-    SyntaxTreeNode* iterations; 
-    SyntaxTreeNode* body;
-    LoopNode(SyntaxTreeNode* iterations, SyntaxTreeNode* body, Variables& variables) : iterations(iterations), body(body), SyntaxTreeNode(LOOP, variables) {}
     EvaluationResult evaluate();
 };
 

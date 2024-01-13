@@ -1,4 +1,3 @@
 target: main.cpp interpreter.cpp syntax-tree.cpp 
-	@clang++ -std=c++20 main.cpp interpreter.cpp syntax-tree.cpp
-	@./a.out
-	@rm ./a.out
+	@clang++ -std=c++20 -o main main.cpp interpreter.cpp syntax-tree.cpp
+	@./main

@@ -29,7 +29,6 @@ private:
         ASSIGNMENT,
         RETURN,
         IF_ELSE,
-        LOOP,
         LONE_FUNCTION_CALL,
         FUNCTION_DEFINITION,
         PRINT,
@@ -72,7 +71,6 @@ private:
     SyntaxTreeNode* parse_braces_block(int& start_line);
     SyntaxTreeNode* parse_if_else_node(int& start_line);
     SyntaxTreeNode* parse_print_node(int& start_line);
-    SyntaxTreeNode* parse_loop_node(int& start_line);
     SyntaxTreeNode* parse_single_statement_node(int& start_line);
     SyntaxTreeNode* parse_function_definition(int& start_line);
     SyntaxTreeNode* parse_block(int& start_line, int& end_line);
