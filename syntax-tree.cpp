@@ -40,24 +40,26 @@ void Variables::exit_current_scope() {
 
 std::string get_node_type_string_from_enum(SyntaxTreeNodeType type) {
     switch (type) {
-        case STATEMENT_SEQUENCE:
+        case SyntaxTreeNodeType::STATEMENT_SEQUENCE:
             return "STATEMENT_SEQUENCE";
-        case OPERAND:
+        case SyntaxTreeNodeType::OPERAND:
             return "OPERAND";
-        case RETURN:
+        case SyntaxTreeNodeType::RETURN:
             return "RETURN";
-        case ASSIGNMENT:
+        case SyntaxTreeNodeType::ASSIGNMENT:
             return "ASSIGNMENT";
-        case BINARY_OPERATION:
+        case SyntaxTreeNodeType::BINARY_OPERATION:
             return "BINARY_OPERATION";
-        case IF_ELSE:
+        case SyntaxTreeNodeType::IF_ELSE:
             return "IF_ELSE";
-        case LOOP:
+        case SyntaxTreeNodeType::LOOP:
             return "LOOP";
-        case FUNCTION:
+        case SyntaxTreeNodeType::FUNCTION_CALL:
             return "FUNCTION";
-        case PRINT:
+        case SyntaxTreeNodeType::PRINT:
             return "PRINT";
+        case SyntaxTreeNodeType::EMPTY:
+            return "EMPTY";
     }
 }
 
@@ -111,14 +113,18 @@ SyntaxTreeNode::EvaluationResult ReturnNode::evaluate() {
 SyntaxTreeNode::EvaluationResult AssignmentNode::evaluate() {
     print("EVALUATING ASSIGNMENT NODE WITH VARIABLE", variable_name);
     EvaluationResult result;
-    int assignment_value = value->evaluate().expression_value;
-    print("DERIVED ASSIGNMENT VALUE FOR OPERAND NODE, ASSIGNMENT VALUE =", assignment_value);
+    print("ASSIGNMENT VALUE NODE IS NULL?", value == nullptr ? "YES" : "NO");
+    EvaluationResult assignment_value_result = value->evaluate();
+    int assignment_value = assignment_value_result.expression_value;
+    if (value->node_type == SyntaxTreeNodeType::FUNCTION_CALL) assignment_value = assignment_value_result.return_value;
+    print("DERIVED ASSIGNMENT VALUE, ASSIGNMENT VALUE =", assignment_value);
     variables.assign_variable_and_initialize_if_necessary(variable_name, assignment_value);
     result.expression_value = 1;
     return result;
 }
 
 SyntaxTreeNode::EvaluationResult BinaryOperationNode::evaluate() {
+    print("ABOUT TO EVALUATE BINARY OPERATION NODE");
     EvaluationResult result;
     int left_value = left_operand->evaluate().expression_value;
     int right_value = right_operand->evaluate().expression_value;
@@ -161,7 +167,10 @@ SyntaxTreeNode::EvaluationResult BinaryOperationNode::evaluate() {
             break;
     }
 
+    print("RESULT OF BINARY OPERATION WAS", expression_value);
+
     result.expression_value = expression_value;
+    print("ABOUT TO RETURN RESULT WITH EXPRESSION VALUE OF", result.expression_value);
     return result;
 }
 
@@ -192,6 +201,7 @@ SyntaxTreeNode::EvaluationResult LoopNode::evaluate() {
 }
 
 SyntaxTreeNode::EvaluationResult FunctionNode::evaluate() {
+    print("EVALUATING FUNCTION NODE");
     variables.enter_new_scope();
 
     for (std::pair<std::string, SyntaxTreeNode*> argument : arguments) {
@@ -219,7 +229,7 @@ SyntaxTreeNode::EvaluationResult PrintNode::evaluate() {
     EvaluationResult value_result = value->evaluate();
     print("EVALUATING PRINT NODE, VALUE_RESULT =", value_result.expression_value, value_result.return_value);
     int to_print = 0;
-    if (value->node_type == FUNCTION) to_print = value_result.return_value;
+    if (value->node_type == FUNCTION_CALL) to_print = value_result.return_value;
     else to_print = value_result.expression_value;
     std::cout << to_print << std::endl;
     return EvaluationResult();

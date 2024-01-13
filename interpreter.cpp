@@ -83,6 +83,8 @@ void Interpreter::read_input_file_and_parse_into_tokens() {
     }
 
     total_lines = lines.size();
+
+    print("FINISHED READING INPUT AND PARSING INTO TOKENS");
 }
 
 
@@ -91,12 +93,18 @@ void Interpreter::generate_syntax_tree() {
 }
 
 bool Interpreter::token_is_function_name(Token& token) {
-    return functions.find(token) != functions.end();
+    return function_map.find(token) != function_map.end();
 }
 
 bool Interpreter::line_is_lone_function_call(Line& line) {
     Token first_token = line[0];
     return token_is_function_name(first_token);
+}
+
+SyntaxTreeNode* Interpreter::parse_lone_function_call_node(int& start_line) {
+    SyntaxTreeNode* function_call_node = parse_function_call_node(start_line);
+    start_line++;
+    return function_call_node;
 }
 
 Interpreter::StatementNodeType Interpreter::get_next_statement_node_type(int& start_line) {
@@ -158,84 +166,90 @@ SyntaxTreeNode* Interpreter::parse_binary_operation_node(const Token& left, cons
     return new BinaryOperationNode(binary_operation_token_to_enum(op), left_operand, right_operand, variables);
 }
 
-Interpreter::AssignmentStatementType Interpreter::get_assignment_statement_type(Line& line) {
-    if (line.size() == 3) return AssignmentStatementType::BASIC;
-    Token possible_function_name = line[2];
-    if (functions.find(possible_function_name) != functions.end()) return AssignmentStatementType::FUNCTION_CALL;
-    else return AssignmentStatementType::BINARY_OPERATION;
+Interpreter::AssignmentValueType Interpreter::get_assignment_value_type(Line& line, int start_index, int end_index) {
+    int length = end_index - start_index + 1;
+    if (length == 1) return AssignmentValueType::OPERAND;
+    Token possible_function_name = line[start_index];
+    if (function_map.find(possible_function_name) != function_map.end()) return AssignmentValueType::FUNCTION_CALL;
+    else return AssignmentValueType::BINARY_OPERATION;
 }
 
-OperandType Interpreter::get_operand_type_from_token(Token& token) {
-    bool all_numeric = true;
-    bool all_letters = true;
-    for (char c : token) {
-        if (!('0' <= c && c <= '9')) all_numeric = false;
-        if (!(('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z'))) all_letters = false;
-    }
-
-    if (all_numeric) return OperandType::LITERAL;
-    else if (all_letters) return OperandType::IDENTIFIER;
-    else {
-        std::cerr << "Error: operand type is neither literal nor identifier";
-        return OperandType::LITERAL;
+SyntaxTreeNode* Interpreter::parse_assignment_value_node(int start_line, int start_index, int end_index) {
+    Line& line = lines[start_line];
+    AssignmentValueType assignment_value_type = get_assignment_value_type(line, start_index, end_index);
+    SyntaxTreeNode* value_node = nullptr;
+    print("ASSIGNMENT VALUE TYPE =", assignment_value_type);
+    switch(assignment_value_type) {
+        case AssignmentValueType::OPERAND: 
+            return parse_operand_token(line[start_index]);
+        case AssignmentValueType::BINARY_OPERATION: 
+            return parse_binary_operation_node(line[start_index], line[start_index + 1], line[start_index + 2]);
+        case AssignmentValueType::FUNCTION_CALL: 
+            return parse_function_call_node(start_line);
     }
 }
 
-SyntaxTreeNode* Interpreter::parse_function_call_node(int& line_number) {
-    Line& line = lines[line_number];
-    line_number++;
+Interpreter::FunctionSignatureDetails Interpreter::get_function_signature_details(Line& line, bool is_definition) {
+    print("GETTING FUNCTION SIGNATURE DETAILS");
 
     int function_name_index = 0;
-    while (!token_is_function_name(line[function_name_index])) function_name_index++;
+    if (is_definition) function_name_index = 1;
+    else {
+        while (!token_is_function_name(line[function_name_index])) function_name_index++;
+    }
     Token function_name = line[function_name_index];
 
-    int first_argument_index = function_name_index + 2;
-    std::vector<SyntaxTreeNode*> argument_nodes;
-    for (int i = first_argument_index; line[i] != ")"; i++) {
+    int first_input_index = function_name_index + 2;
+    std::vector<Token> input_tokens;
+    for (int i = first_input_index; line[i] != ")"; i++) {
         if (line[i] != ",") {
-            Token argument = line[i];
-            OperandType operand_type = get_operand_type_from_token(argument);
-            OperandNode* argument_node = nullptr;
-            if (operand_type == OperandType::LITERAL) argument_node = new OperandNode(operand_type, std::stoi(argument), variables);
-            else argument_node = new OperandNode(operand_type, argument, variables);
-            argument_nodes.push_back(argument_node);
+            Token input = line[i];
+            input_tokens.push_back(input);
         }
     }
 
-    SyntaxTreeNode* function_body = functions[function_name];
+    return FunctionSignatureDetails {
+        .name = function_name,
+        .inputs = input_tokens
+    };
+}
 
-    // TODO need to store parameter names when reading function definition
-    // so that argument_nodes can be a map instead of a vector
-    return new FunctionNode(function_body, argument_nodes, variables);
+SyntaxTreeNode* Interpreter::parse_function_call_node(int& start_line) {
+    Line& line = lines[start_line];
+
+    FunctionSignatureDetails function_signature_details = get_function_signature_details(line, false);
+    Token function_name = function_signature_details.name;
+    std::vector<Token> argument_tokens = function_signature_details.inputs;
+
+    std::vector<SyntaxTreeNode*> argument_nodes;
+    for (Token token : argument_tokens) {
+        SyntaxTreeNode* node = parse_operand_token(token);
+        argument_nodes.push_back(node);
+    }
+
+    FunctionData function_data = function_map[function_name];
+    SyntaxTreeNode* function_body = function_data.body;
+    std::vector<Token> parameters = function_data.parameters; 
+
+    std::map<std::string, SyntaxTreeNode*> argument_map;
+    for (int i = 0; i < parameters.size(); i++) {
+        argument_map[parameters[i]] = argument_nodes[i];
+    }
+
+    start_line++;
+
+    return new FunctionNode(function_body, argument_map, variables);
 }
 
 SyntaxTreeNode* Interpreter::parse_assignment_node(int& start_line) {
     Line& line = lines[start_line];
     Token variable_name = line[0];
 
-    AssignmentStatementType assignment_statement_type = get_assignment_statement_type(line);
-
-    bool contains_binary_operation = line.size() > 3;
-    SyntaxTreeNode* assignment_node = nullptr;
-
-    switch(assignment_statement_type) {
-        case AssignmentStatementType::BASIC: {
-            SyntaxTreeNode* value_node = parse_operand_token(line[2]);
-            assignment_node = new AssignmentNode(variable_name, value_node, variables);
-            break;
-        }
-        case AssignmentStatementType::BINARY_OPERATION: {
-            SyntaxTreeNode* binary_operation_node = parse_binary_operation_node(line[2], line[3], line[4]);
-            assignment_node = new AssignmentNode(variable_name, binary_operation_node, variables);
-            break;
-        }
-        case AssignmentStatementType::FUNCTION_CALL: {
-            Token function_name = line[2];
-        }
-    }
+    SyntaxTreeNode* assignment_value_node = parse_assignment_value_node(start_line, 2, line.size() - 1);
 
     start_line++;
-    return assignment_node;
+
+    return new AssignmentNode(variable_name, assignment_value_node, variables);
 }
 
 int Interpreter::get_closing_brace_line(int opening_brace_line) {
@@ -302,11 +316,38 @@ SyntaxTreeNode* Interpreter::parse_loop_node(int& start_line) {
 }
 
 SyntaxTreeNode* Interpreter::parse_function_definition(int& start_line) {
-    Token function_name = lines[start_line][1];
+    print("PARSING FUNCTION DEFINITION");
+    Line& line = lines[start_line];
+
+    FunctionSignatureDetails function_signature_details = get_function_signature_details(line, true);
+    Token function_name = function_signature_details.name;
+    std::vector<Token> parameters = function_signature_details.inputs;
+
     start_line++;
+
     SyntaxTreeNode* function_body_node = parse_braces_block(start_line);
-    functions[function_name] = function_body_node;
-    return new EmptyNode(variables);
+
+    print("DONE PARSING FUNCTION BODY NODE");
+
+    function_map[function_name] = FunctionData {
+        .body = function_body_node,
+        .parameters = parameters
+    };
+
+    print("SUCCESSFULLY SET FUNCTION MAP");
+
+    SyntaxTreeNode* empty_node = new EmptyNode(variables);
+
+    print("INSTANTIATED EMPTY NODE");
+
+    return empty_node;
+}
+
+SyntaxTreeNode* Interpreter::parse_return_node(int& start_line) {
+    Line& line = lines[start_line];
+    SyntaxTreeNode* value_node = parse_assignment_value_node(start_line, 1, line.size() - 1);
+    start_line++;
+    return new ReturnNode(value_node, variables);
 }
 
 SyntaxTreeNode* Interpreter::parse_single_statement_node(int& start_line) {
@@ -323,6 +364,11 @@ SyntaxTreeNode* Interpreter::parse_single_statement_node(int& start_line) {
             return parse_loop_node(start_line);
         case StatementNodeType::FUNCTION_DEFINITION:
             return parse_function_definition(start_line);
+        case StatementNodeType::LONE_FUNCTION_CALL:
+            return parse_lone_function_call_node(start_line);
+        case StatementNodeType::RETURN:
+            return parse_return_node(start_line);
+
     }
     print("ERROR: SINGLE STATEMENT NODE = NULLPTR");
     return nullptr;
@@ -330,6 +376,7 @@ SyntaxTreeNode* Interpreter::parse_single_statement_node(int& start_line) {
 
 
 SyntaxTreeNode* Interpreter::parse_block(int& start_line, int& end_line) {
+    print("ENTERED PARSE_BLOCK");
     std::vector<SyntaxTreeNode*> nodes;
     while (start_line <= end_line) {
         SyntaxTreeNode* node = parse_single_statement_node(start_line);

@@ -1,6 +1,35 @@
-N = 2
-for (N) {
-    for (N) {
-        print(1)
+function get_num_divisors(n) {
+    count = 0
+    a = 0
+    for (n) {
+        a = a + 1
+        mod_result = n % a
+        if (mod_result == 0) {
+            count = count + 1
+        }
+    }
+    return count 
+}
+
+function is_prime(n) {
+    num_divisors = get_num_divisors(n)
+    if (num_divisors == 2) {
+        return 1
+    }
+    else {
+        return 0
     }
 }
+
+function print_all_primes_up_to(n) {
+    a = 0
+    for (n) {
+        a = a + 1
+        a_is_prime = is_prime(a)
+        if (a_is_prime == 1) {
+            print(a)
+        }
+    }
+}
+
+print_all_primes_up_to(100)

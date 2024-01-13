@@ -16,8 +16,14 @@ private:
     Variables variables;
     std::vector<Line> lines;
     int total_lines;
-    using FunctionMap = std::map<Token, SyntaxTreeNode*>;
-    FunctionMap functions;
+
+    struct FunctionData {
+        SyntaxTreeNode* body;
+        std::vector<Token> parameters;
+    };
+
+    using FunctionMap = std::map<Token, FunctionData>;
+    FunctionMap function_map;
 
     enum StatementNodeType {
         ASSIGNMENT,
@@ -26,22 +32,29 @@ private:
         LOOP,
         LONE_FUNCTION_CALL,
         FUNCTION_DEFINITION,
-        EMPTY,
         PRINT
     };
 
-    enum AssignmentStatementType {
-        BASIC,
+    enum AssignmentValueType {
+        OPERAND,
         BINARY_OPERATION,
         FUNCTION_CALL
     };
 
     friend std::ostream& operator<<(std::ostream& o, Line& line);
 
-    OperandType get_operand_type_from_token(Token& token);
+    struct FunctionSignatureDetails {
+        std::vector<Token> inputs;
+        Token name;
+    };
+
+    SyntaxTreeNode* parse_assignment_value_node(int start_line, int start_index, int end_index);
+    SyntaxTreeNode* parse_return_node(int& start_line);
+    SyntaxTreeNode* parse_lone_function_call_node(int& start_line);
+    FunctionSignatureDetails get_function_signature_details(Line& line, bool is_definition);
     bool token_is_function_name(Token& token);
     SyntaxTreeNode* parse_function_call_node(int& line_number);
-    AssignmentStatementType get_assignment_statement_type(Line& line);
+    AssignmentValueType get_assignment_value_type(Line& line, int start_index, int end_index);
     void preprocess_input_string(std::string& input_string);
     void read_input_file_and_parse_into_tokens();
     bool token_is_variable_name(const Token& token);

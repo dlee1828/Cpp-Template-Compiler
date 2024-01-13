@@ -9,7 +9,7 @@
                 "-fansi-escape-codes",
                 "-g",
                 "main.cpp",
-                "parser.cpp",
+                "interpreter.cpp",
                 "syntax-tree.cpp",
                 "-std=c++20",
                 "-o",
