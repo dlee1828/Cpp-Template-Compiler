@@ -15,7 +15,6 @@ std::ostream& operator<<(std::ostream& o, Variables& variables) {
 
 int Variables::get_variable_value(const std::string& variable_name) {
     int scope_limit = function_scope_indices.top();
-    print("GETTING VARIABLE VALUE OF", variable_name);
     for (int i = scoped_variables.size() - 1; i >= scope_limit; i--) {
         VariableMap& variable_map = scoped_variables[i];
         if (variable_map.find(variable_name) != variable_map.end()) return variable_map[variable_name];
@@ -26,7 +25,6 @@ int Variables::get_variable_value(const std::string& variable_name) {
 
 void Variables::assign_variable_and_initialize_if_necessary(const std::string& variable_name, int value) {
     int scope_limit = function_scope_indices.top();
-    print("ABOUT TO ACTUALLY ASSIGN VARIABLE", variable_name, "VALUE", value);
     for (int i = scoped_variables.size() - 1; i >= scope_limit; i--) {
         VariableMap& variable_map = scoped_variables[i];
         if (variable_map.find(variable_name) != variable_map.end()) {
@@ -39,17 +37,11 @@ void Variables::assign_variable_and_initialize_if_necessary(const std::string& v
 }
 
 void Variables::enter_block_scope() {
-    print("ENTERING NEW SCOPE");
     scoped_variables.push_back(VariableMap());
 }
 
 void Variables::exit_block_scope() {
-    print("ABOUT TO EXIT BLOCK SCOPE");
-    print("INITIAL STATE OF VARIABLES:");
-    print(*this);
     scoped_variables.pop_back();
-    print("STATE OF VARIABLES AFTER EXITING BLOCK SCOPE:");
-    print(*this);
 }
 
 void Variables::enter_function_scope() {
@@ -95,12 +87,8 @@ std::ostream& operator<<(std::ostream& o, const SyntaxTreeNode* node) {
 
 
 SyntaxTreeNode::EvaluationResult StatementSequenceNode::evaluate() {
-    print("EVALUATING STATEMENT SEQUENCE NODE");
     EvaluationResult result;
     for (SyntaxTreeNode* node : statements) {
-        print("WITHIN STATEMENT SEQUENCE NODE, ABOUT TO EVALUATE NODE OF TYPE", get_node_type_string_from_enum(node->node_type));
-        print("STATE OF VARIABLES:");
-        print(variables);
         EvaluationResult node_result = node->evaluate();
         if (node_result.should_return) {
             result.return_value =  node_result.return_value;
@@ -112,15 +100,12 @@ SyntaxTreeNode::EvaluationResult StatementSequenceNode::evaluate() {
 }
 
 SyntaxTreeNode::EvaluationResult OperandNode::evaluate() {
-    print("EVALUATING OPERAND NODE OF TYPE", operand_type == IDENTIFIER ? "IDENTIFIER" : "LITERAL");
     EvaluationResult result;
     switch (operand_type) {
         case IDENTIFIER:
-            print("IDENTIFIER =", identifier_value);
             result.expression_value = variables.get_variable_value(identifier_value);
             break;
         case LITERAL:
-            print("LITERAL =", literal_value);
             result.expression_value = literal_value;
             break;
     }
@@ -135,24 +120,19 @@ SyntaxTreeNode::EvaluationResult ReturnNode::evaluate() {
 }
 
 SyntaxTreeNode::EvaluationResult AssignmentNode::evaluate() {
-    print("EVALUATING ASSIGNMENT NODE WITH VARIABLE", variable_name);
     EvaluationResult result;
-    print("ASSIGNMENT VALUE NODE IS NULL?", value == nullptr ? "YES" : "NO");
     EvaluationResult assignment_value_result = value->evaluate();
     int assignment_value = assignment_value_result.expression_value;
     if (value->node_type == SyntaxTreeNodeType::FUNCTION_CALL) assignment_value = assignment_value_result.return_value;
-    print("DERIVED ASSIGNMENT VALUE, ASSIGNMENT VALUE =", assignment_value);
     variables.assign_variable_and_initialize_if_necessary(variable_name, assignment_value);
     result.expression_value = 1;
     return result;
 }
 
 SyntaxTreeNode::EvaluationResult BinaryOperationNode::evaluate() {
-    print("ABOUT TO EVALUATE BINARY OPERATION NODE");
     EvaluationResult result;
     int left_value = left_operand->evaluate().expression_value;
     int right_value = right_operand->evaluate().expression_value;
-    print("EVALUATING BINARY OPERATION NODE FOR", left_value, operation, right_value);
 
     int expression_value = 0; 
     switch(operation) {
@@ -197,25 +177,17 @@ SyntaxTreeNode::EvaluationResult BinaryOperationNode::evaluate() {
             break;
     }
 
-    print("RESULT OF BINARY OPERATION WAS", expression_value);
-
     result.expression_value = expression_value;
-    print("ABOUT TO RETURN RESULT WITH EXPRESSION VALUE OF", result.expression_value);
     return result;
 }
 
 SyntaxTreeNode::EvaluationResult IfElseNode::evaluate() {
-    print("EVALUATING IF ELSE NODE");
     int condition_value = condition->evaluate().expression_value;
-    print("CONDITION'S ACTUAL VALUE =", condition_value);
-    condition_value ? print("CONDITION WAS TRUE") : print("CONDITION WAS FALSE");
     if (condition_value) return if_block->evaluate();
     else return else_block->evaluate();
 }
 
 SyntaxTreeNode::EvaluationResult FunctionNode::evaluate() {
-    print("EVALUATING FUNCTION NODE");
-
     std::map<std::string, int> argument_values; 
     for (std::pair<std::string, SyntaxTreeNode*> argument : arguments) {
         std::string& variable_name = argument.first;
@@ -239,14 +211,12 @@ SyntaxTreeNode::EvaluationResult FunctionNode::evaluate() {
 }
 
 SyntaxTreeNode::EvaluationResult EmptyNode::evaluate() {
-    print("EVALUATING EMPTY NODE");
     EvaluationResult result;
     return result;
 }
 
 SyntaxTreeNode::EvaluationResult PrintNode::evaluate() {
     EvaluationResult value_result = value->evaluate();
-    print("EVALUATING PRINT NODE, VALUE_RESULT =", value_result.expression_value, value_result.return_value);
     int to_print = 0;
     if (value->node_type == FUNCTION_CALL) to_print = value_result.return_value;
     else to_print = value_result.expression_value;

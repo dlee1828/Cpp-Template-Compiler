@@ -66,13 +66,11 @@ void Interpreter::read_input_file_and_parse_into_tokens() {
     input_string_stream << input_file_stream.rdbuf();
     std::string input_string = input_string_stream.str();
     preprocess_input_string(input_string);
-    print(input_string);
     input_string_stream = std::stringstream(input_string);
 
     std::string line_string;
     Line current_line;
     while (getline(input_string_stream, line_string)) {
-        print(line_string);
         current_line.clear();
         std::stringstream line_stream(line_string);
         Token token;
@@ -84,7 +82,6 @@ void Interpreter::read_input_file_and_parse_into_tokens() {
 
     total_lines = lines.size();
 
-    print("FINISHED READING INPUT AND PARSING INTO TOKENS");
 }
 
 
@@ -102,7 +99,6 @@ bool Interpreter::line_is_lone_function_call(Line& line) {
 }
 
 SyntaxTreeNode* Interpreter::parse_lone_function_call_node(int& start_line) {
-    print("PARSING LONE FUNCTION CALL NODE");
     SyntaxTreeNode* function_call_node = parse_function_call_node(start_line);
     start_line++;
     return function_call_node;
@@ -154,7 +150,6 @@ int Interpreter::get_literal_value_from_token(const Token& token) {
 }
 
 SyntaxTreeNode* Interpreter::parse_operand_token(const Token& token) {
-    print("PARSING OPERAND TOKEN FOR TOKEN", token);
     OperandType operand_type = token_is_variable_name(token) ? IDENTIFIER : LITERAL;
     SyntaxTreeNode* operand_node = nullptr;
     if (operand_type == LITERAL) operand_node = new OperandNode(operand_type, get_literal_value_from_token(token), variables);
@@ -163,7 +158,6 @@ SyntaxTreeNode* Interpreter::parse_operand_token(const Token& token) {
 }
 
 SyntaxTreeNode* Interpreter::parse_binary_operation_node(const Token& left, const Token& op, const Token& right) {
-    print("PARSING BINARY OPERATION NODE FOR", left, op, right);
     SyntaxTreeNode* left_operand = parse_operand_token(left);
     SyntaxTreeNode* right_operand = parse_operand_token(right);
     return new BinaryOperationNode(binary_operation_token_to_enum(op), left_operand, right_operand, variables);
@@ -181,7 +175,6 @@ SyntaxTreeNode* Interpreter::parse_assignment_value_node(int start_line, int sta
     Line& line = lines[start_line];
     AssignmentValueType assignment_value_type = get_assignment_value_type(line, start_index, end_index);
     SyntaxTreeNode* value_node = nullptr;
-    print("ASSIGNMENT VALUE TYPE =", assignment_value_type);
     switch(assignment_value_type) {
         case AssignmentValueType::OPERAND: 
             return parse_operand_token(line[start_index]);
@@ -193,8 +186,6 @@ SyntaxTreeNode* Interpreter::parse_assignment_value_node(int start_line, int sta
 }
 
 Interpreter::FunctionSignatureDetails Interpreter::get_function_signature_details(Line& line, bool is_definition) {
-    print("GETTING FUNCTION SIGNATURE DETAILS");
-
     int function_name_index = 0;
     if (is_definition) function_name_index = 1;
     else {
@@ -254,7 +245,6 @@ SyntaxTreeNode* Interpreter::parse_assignment_node(int& start_line) {
 }
 
 int Interpreter::get_closing_brace_line(int opening_brace_line) {
-    print("GETTING CLOSING BRACE FOR OPENING BRACE STARTING AT", opening_brace_line);
     int num_open_braces = 1;
     int i = opening_brace_line + 1;
     while (i < total_lines) {
@@ -269,17 +259,14 @@ int Interpreter::get_closing_brace_line(int opening_brace_line) {
 
 SyntaxTreeNode* Interpreter::parse_braces_block(int& start_line) {
     int end_line = get_closing_brace_line(start_line);
-    print("PARSING BRACES BLOCK FROM LINE", start_line, "TO", end_line);
     start_line++;
     end_line--;
     SyntaxTreeNode* node = parse_block(start_line, end_line);
-    print("PARSED BRACES BLOCK, RESULT:", node);
     start_line++;
     return node;
 }
 
 SyntaxTreeNode* Interpreter::parse_if_else_node(int& start_line) {
-    print("PARSING IF ELSE NODE STARTING AT", start_line);
     Line& line = lines[start_line];
 
     SyntaxTreeNode* binary_operation_node = parse_binary_operation_node(line[2], line[3], line[4]);
@@ -304,18 +291,14 @@ int Interpreter::get_closing_parenthesis_index(Line& line) {
 
 SyntaxTreeNode* Interpreter::parse_print_node(int& start_line) {
     Line& line = lines[start_line];
-    print("PARSING PRINT NODE FOR LINE", line);
     int closing_parenthesis_index = get_closing_parenthesis_index(line);
     SyntaxTreeNode* print_value_node = parse_assignment_value_node(start_line, 2, closing_parenthesis_index - 1);
-    print("SUCCESSFULLY PARSED OPERAND TOKEN IN PRINT NODE FOR LINE", line);
     SyntaxTreeNode* node = new PrintNode(print_value_node, variables);
-    print("SUCCESSFULLY INSTANTIATED NEW PRINT NODE");
     start_line++;
     return node;
 }
 
 SyntaxTreeNode* Interpreter::parse_function_definition(int& start_line) {
-    print("PARSING FUNCTION DEFINITION");
     Line& line = lines[start_line];
 
     FunctionSignatureDetails function_signature_details = get_function_signature_details(line, true);
@@ -326,18 +309,12 @@ SyntaxTreeNode* Interpreter::parse_function_definition(int& start_line) {
 
     SyntaxTreeNode* function_body_node = parse_braces_block(start_line);
 
-    print("DONE PARSING FUNCTION BODY NODE");
-
     function_map[function_name] = FunctionData {
         .body = function_body_node,
         .parameters = parameters
     };
 
-    print("SUCCESSFULLY SET FUNCTION MAP");
-
     SyntaxTreeNode* empty_node = new EmptyNode(variables);
-
-    print("INSTANTIATED EMPTY NODE");
 
     return empty_node;
 }
@@ -377,17 +354,14 @@ SyntaxTreeNode* Interpreter::parse_single_statement_node(int& start_line) {
             return parse_while_node(start_line);
 
     }
-    print("ERROR: SINGLE STATEMENT NODE = NULLPTR");
     return nullptr;
 }
 
 
 SyntaxTreeNode* Interpreter::parse_block(int& start_line, int& end_line) {
-    print("ENTERED PARSE_BLOCK");
     std::vector<SyntaxTreeNode*> nodes;
     while (start_line <= end_line) {
         SyntaxTreeNode* node = parse_single_statement_node(start_line);
-        print("DONE PARSING NODE OF TYPE", get_node_type_string_from_enum(node->node_type));
         nodes.push_back(node);
     }
     if (nodes.size() == 1) return nodes[0];

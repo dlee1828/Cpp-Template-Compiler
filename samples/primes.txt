@@ -1,9 +1,9 @@
-function get_num_divisors(n) {
+function count_divisors(n) {
     count = 0
     a = 1
     while (a <= n) {
-        mod_result = n % a
-        if (mod_result == 0) {
+        remainder = n % a
+        if (remainder == 0) {
             count = count + 1
         }
         a = a + 1
@@ -11,9 +11,9 @@ function get_num_divisors(n) {
     return count
 }
 
-function check_is_prime(n) {
-    num_divisors = get_num_divisors(n)
-    if (num_divisors == 2) {
+function check_prime(n) {
+    divisors = count_divisors(n)
+    if (divisors == 2) {
         return 1
     }
     else {
@@ -21,16 +21,15 @@ function check_is_prime(n) {
     }
 }
 
-function print_primes_up_to(n) {
-    a = 0
-    while (a < n) {
-        print(a)
-        a = a + 1
-        is_prime = check_is_prime(a)
-        if(is_prime == 1) {
-            print(a)
+function print_primes(n) {
+    i = 1
+    while (i <= n) {
+        is_prime = check_prime(i)
+        if (is_prime == 1) {
+            print(i)
         }
+        i = i + 1
     }
 }
 
-print_primes_up_to(100)
+print_primes(100)
