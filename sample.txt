@@ -24,13 +24,12 @@ function check_is_prime(n) {
 function print_primes_up_to(n) {
     a = 0
     while (a < n) {
-        print(a)
         a = a + 1
         is_prime = check_is_prime(a)
-        if(is_prime == 1) {
+        if (is_prime == 1) {
             print(a)
         }
     }
 }
 
-print_primes_up_to(100)
+print_primes_up_to(30)

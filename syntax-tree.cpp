@@ -2,41 +2,65 @@
 #include "debug.hpp"
 
 std::ostream& operator<<(std::ostream& o, Variables& variables) {
-    for (std::pair<std::string, int> map_entry : variables.variable_values) {
-        o << map_entry.first << ": " << map_entry.second << std::endl;
+    std::vector<Variables::VariableMap> scoped_variables = variables.scoped_variables;
+    for (int i = 0; i < scoped_variables.size(); i++) {
+        o << "Scope " << i << ":" << std::endl;
+        for (std::pair<std::string, int> variable_map_entry : scoped_variables[i]) {
+            o << variable_map_entry.first << " = " << variable_map_entry.second << std::endl;
+        }
     }
     return o;
 }
 
+
 int Variables::get_variable_value(const std::string& variable_name) {
+    int scope_limit = function_scope_indices.top();
     print("GETTING VARIABLE VALUE OF", variable_name);
-    print("STATE OF VARIABLES:", *this);
-    int value = variable_values[variable_name];
-    print("VALUE WAS", value);
-    return value;
+    for (int i = scoped_variables.size() - 1; i >= scope_limit; i--) {
+        VariableMap& variable_map = scoped_variables[i];
+        if (variable_map.find(variable_name) != variable_map.end()) return variable_map[variable_name];
+    }
+    std::cerr << "ERROR: COULD NOT FIND VALUE FOR VARIABLE " << variable_name << std::endl;
+    return -1;
 }
 
 void Variables::assign_variable_and_initialize_if_necessary(const std::string& variable_name, int value) {
+    int scope_limit = function_scope_indices.top();
     print("ABOUT TO ACTUALLY ASSIGN VARIABLE", variable_name, "VALUE", value);
-    bool need_to_initialize = (variable_values.find(variable_name) == variable_values.end());
-    variable_values[variable_name] = value;
-    print("JUST ASSIGNED", variable_name, "=", value);
-    if (need_to_initialize) scopes.top().insert(variable_name);
-}
-
-void Variables::enter_new_scope() {
-    Scope new_scope;
-    scopes.push(new_scope);
-}
-
-void Variables::exit_current_scope() {
-    Scope current_scope = scopes.top();
-    for (std::string variable_name : current_scope) {
-        variable_values.erase(variable_values.find(variable_name));
+    for (int i = scoped_variables.size() - 1; i >= scope_limit; i--) {
+        VariableMap& variable_map = scoped_variables[i];
+        if (variable_map.find(variable_name) != variable_map.end()) {
+            variable_map[variable_name] = value;
+            return;
+        }
     }
-    scopes.pop();
+
+    scoped_variables.back()[variable_name] = value;
 }
 
+void Variables::enter_block_scope() {
+    print("ENTERING NEW SCOPE");
+    scoped_variables.push_back(VariableMap());
+}
+
+void Variables::exit_block_scope() {
+    print("ABOUT TO EXIT BLOCK SCOPE");
+    print("INITIAL STATE OF VARIABLES:");
+    print(*this);
+    scoped_variables.pop_back();
+    print("STATE OF VARIABLES AFTER EXITING BLOCK SCOPE:");
+    print(*this);
+}
+
+void Variables::enter_function_scope() {
+    scoped_variables.push_back(VariableMap());
+    function_scope_indices.push(scoped_variables.size() - 1);
+}
+
+void Variables::exit_function_scope() {
+    scoped_variables.pop_back();
+    function_scope_indices.pop();
+}
 
 std::string get_node_type_string_from_enum(SyntaxTreeNodeType type) {
     switch (type) {
@@ -182,37 +206,40 @@ SyntaxTreeNode::EvaluationResult BinaryOperationNode::evaluate() {
 
 SyntaxTreeNode::EvaluationResult IfElseNode::evaluate() {
     print("EVALUATING IF ELSE NODE");
-    variables.enter_new_scope();
     int condition_value = condition->evaluate().expression_value;
     print("CONDITION'S ACTUAL VALUE =", condition_value);
     condition_value ? print("CONDITION WAS TRUE") : print("CONDITION WAS FALSE");
     if (condition_value) return if_block->evaluate();
     else return else_block->evaluate();
-    variables.exit_current_scope();
 }
 
 SyntaxTreeNode::EvaluationResult FunctionNode::evaluate() {
     print("EVALUATING FUNCTION NODE");
-    variables.enter_new_scope();
 
+    std::map<std::string, int> argument_values; 
     for (std::pair<std::string, SyntaxTreeNode*> argument : arguments) {
         std::string& variable_name = argument.first;
         SyntaxTreeNode* node = argument.second; 
 
         int value = node->evaluate().expression_value;
 
-        // TODO: FIX THIS
-        variables.assign_variable_and_initialize_if_necessary(variable_name, value);
+        argument_values[variable_name] = value;
+    }
+
+    variables.enter_function_scope();
+    for (std::pair<std::string, int> argument_value : argument_values) {
+        variables.assign_variable_and_initialize_if_necessary(argument_value.first, argument_value.second);
     }
 
     EvaluationResult result = body->evaluate();
     result.should_return = false;
 
-    variables.exit_current_scope();
+    variables.exit_function_scope();
     return result;
 }
 
 SyntaxTreeNode::EvaluationResult EmptyNode::evaluate() {
+    print("EVALUATING EMPTY NODE");
     EvaluationResult result;
     return result;
 }
@@ -230,14 +257,14 @@ SyntaxTreeNode::EvaluationResult PrintNode::evaluate() {
 SyntaxTreeNode::EvaluationResult WhileNode::evaluate() {
     EvaluationResult result;
     while (condition->evaluate().expression_value == 1) {
-        variables.enter_new_scope();
+        variables.enter_block_scope();
         EvaluationResult current_iteration_result = body->evaluate();
         if (current_iteration_result.should_return) {
             result.should_return = true;
             result.return_value = current_iteration_result.return_value;
             break;
         }
-        variables.exit_current_scope();
+        variables.exit_block_scope();
     }
     return result;
 }

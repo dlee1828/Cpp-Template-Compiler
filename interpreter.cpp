@@ -102,6 +102,7 @@ bool Interpreter::line_is_lone_function_call(Line& line) {
 }
 
 SyntaxTreeNode* Interpreter::parse_lone_function_call_node(int& start_line) {
+    print("PARSING LONE FUNCTION CALL NODE");
     SyntaxTreeNode* function_call_node = parse_function_call_node(start_line);
     start_line++;
     return function_call_node;
@@ -237,8 +238,6 @@ SyntaxTreeNode* Interpreter::parse_function_call_node(int& start_line) {
     for (int i = 0; i < parameters.size(); i++) {
         argument_map[parameters[i]] = argument_nodes[i];
     }
-
-    start_line++;
 
     return new FunctionNode(function_body, argument_map, variables);
 }

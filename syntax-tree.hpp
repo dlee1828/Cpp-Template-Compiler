@@ -11,19 +11,21 @@
 class Variables {
 private:
     using VariableMap = std::map<std::string, int>;
-    VariableMap variable_values;
-    using Scope = std::unordered_set<std::string>;
-    std::stack<Scope> scopes;
+    std::vector<VariableMap> scoped_variables;
     friend std::ostream& operator<<(std::ostream& o, Variables& variables);
+    std::stack<int> function_scope_indices;
 
 public:
-    Variables() : variable_values(VariableMap()), scopes(std::stack<Scope>()) {
-        scopes.push(Scope());
+    Variables() : scoped_variables(std::vector<VariableMap>()) {
+        function_scope_indices.push(0);
+        scoped_variables.push_back(VariableMap());
     }
     int get_variable_value(const std::string& variable_name);
     void assign_variable_and_initialize_if_necessary(const std::string& variable_name, int value);
-    void enter_new_scope();
-    void exit_current_scope();
+    void enter_block_scope();
+    void exit_block_scope();
+    void enter_function_scope();
+    void exit_function_scope();
 };
 
 std::ostream& operator<<(std::ostream& o, Variables& variables);

@@ -2,7 +2,7 @@
 #define DEBUG_H
 #include <iostream>
 
-#define DEBUG_ON true
+#define DEBUG_ON false
 
 template<typename T>
 void print(T x) {
