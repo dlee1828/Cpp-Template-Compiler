@@ -74,10 +74,9 @@ private:
     SyntaxTreeNode* parse_single_statement_node(int& start_line);
     SyntaxTreeNode* parse_function_definition(int& start_line);
     SyntaxTreeNode* parse_block(int& start_line, int& end_line);
-    void generate_syntax_tree();
 public:
     Interpreter(std::string input_file_path) : input_file_path(input_file_path), variables(Variables()) {}
-    void parse_file();
+    SyntaxTreeNode* generate_syntax_tree();
 };
 
 std::ostream& operator<<(std::ostream& o, Interpreter::Line& line);

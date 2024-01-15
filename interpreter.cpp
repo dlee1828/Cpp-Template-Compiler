@@ -84,11 +84,6 @@ void Interpreter::read_input_file_and_parse_into_tokens() {
 
 }
 
-
-void Interpreter::generate_syntax_tree() {
-
-}
-
 bool Interpreter::token_is_function_name(Token& token) {
     return function_map.find(token) != function_map.end();
 }
@@ -174,7 +169,6 @@ Interpreter::AssignmentValueType Interpreter::get_assignment_value_type(Line& li
 SyntaxTreeNode* Interpreter::parse_assignment_value_node(int start_line, int start_index, int end_index) {
     Line& line = lines[start_line];
     AssignmentValueType assignment_value_type = get_assignment_value_type(line, start_index, end_index);
-    SyntaxTreeNode* value_node = nullptr;
     switch(assignment_value_type) {
         case AssignmentValueType::OPERAND: 
             return parse_operand_token(line[start_index]);
@@ -368,10 +362,16 @@ SyntaxTreeNode* Interpreter::parse_block(int& start_line, int& end_line) {
     else return new StatementSequenceNode(nodes, variables);
 }
 
-void Interpreter::parse_file() {
+SyntaxTreeNode* Interpreter::generate_syntax_tree() {
     read_input_file_and_parse_into_tokens();
     int start = 0;
     int end = total_lines - 1;
     SyntaxTreeNode* node = parse_block(start, end);
-    node->evaluate();
+    return node;
 }
+
+
+
+
+
+

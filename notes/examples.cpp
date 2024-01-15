@@ -26,18 +26,58 @@ constexpr int d = a + b + c; // recursive addition with ...
 // PLAYGROUND
 
 template<int x, int y>
-struct add {
+struct operation_add {
     static constexpr int value = x + y;
 };
 
 template<int x, int y>
-struct multiply {
+struct operation_subtract {
+    static constexpr int value = x - y;
+};
+
+template<int x, int y>
+struct operation_multiply {
     static constexpr int value = x * y;
 };
 
 template<int x, int y>
-struct subtract {
-    static constexpr int value = x - y;
+struct operation_divide {
+    static constexpr int value = x / y;
+};
+
+template<int x, int y>
+struct operation_mod {
+    static constexpr int value = x % y;
+};
+
+template<int x, int y>
+struct less {
+    static constexpr int value = x < y;
+};
+
+template<int x, int y>
+struct less_equal {
+    static constexpr int value = x <= y;
+};
+
+template<int x, int y>
+struct greater {
+    static constexpr int value = x > y;
+};
+
+template<int x, int y>
+struct greater_equal {
+    static constexpr int value = x > y;
+};
+
+template<int x, int y>
+struct equal {
+    static constexpr int value = x == y;
+};
+
+template<int x, int y>
+struct not_equal {
+    static constexpr int value = x != y;
 };
 
 template <int x>

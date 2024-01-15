@@ -94,6 +94,7 @@ struct AssignmentNode : SyntaxTreeNode {
 enum BinaryOperation {
     ADD, SUBTRACT, MULTIPLY, DIVIDE, MOD, LESS, LESS_EQUAL, GREATER, GREATER_EQUAL, EQUAL, NOT_EQUAL, AND, OR
 };
+
 struct BinaryOperationNode : SyntaxTreeNode {
     BinaryOperation operation;
     SyntaxTreeNode* left_operand;
