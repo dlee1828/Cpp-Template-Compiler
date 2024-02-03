@@ -6,7 +6,7 @@
 
 namespace TS {
     enum RValueType {
-        LITERAL, INTERNAL_VARIABLE, EXTERNAL_VARIABLE
+        LITERAL, INTERNAL_VARIABLE, EXTERNAL_VARIABLE, UNDEFINED
     };
 
     struct RValue {
@@ -14,34 +14,43 @@ namespace TS {
         RValue(RValueType type) : type(type) {}
     };
 
-    class Literal : RValue {
+    struct Literal : RValue {
         int value;
         Literal(int value) : RValue(RValueType::LITERAL), value(value) {}
     };
 
-    class InternalVariable : RValue {
+    struct InternalVariable : RValue {
         std::string variable_name;
         InternalVariable(std::string variable_name) : RValue(RValueType::INTERNAL_VARIABLE), variable_name(variable_name) {}
     };
 
-    class ExternalVariable : RValue {
+    struct ExternalVariable : RValue {
         std::string variable_name;
-        std::string external_ts_name;
-        ExternalVariable(std::string variable_name, std::string external_ts_name) : RValue(RValueType::INTERNAL_VARIABLE), variable_name(variable_name), external_ts_name(external_ts_name) {}
+        TemplateStruct* external_template_struct;
+        std::vector<RValue*> template_arguments;
+        ExternalVariable(std::string variable_name, TemplateStruct* external_template_struct, std::vector<RValue*> template_arguments) : 
+        RValue(RValueType::INTERNAL_VARIABLE), 
+        variable_name(variable_name), 
+        external_template_struct(external_template_struct), 
+        template_arguments(template_arguments)
+        {}
     };
 
     class Statement {
     private:
         std::string variable_name;
-
+        RValue* rvalue;
+    public:
+        Statement(std::string variable_name, RValue* rvalue) : variable_name(variable_name), rvalue(rvalue) {}
     };
 
     class TemplateStruct {
     private:
         std::vector<std::string> template_parameters;
-
-
+        std::vector<Statement> statements;
     public:
+        TemplateStruct(std::vector<std::string> template_parameters) : template_parameters(template_parameters) {}
+        void add_statement(Statement statement) { statements.push_back(statement); }
     };
 }
 #endif

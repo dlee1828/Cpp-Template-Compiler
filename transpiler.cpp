@@ -2,6 +2,7 @@
 #include <format>
 #include "transpiler.hpp"
 #include "debug.hpp"
+#include "template-struct.hpp"
 #include <fstream>
 
 Transpiler::OperationDetails Transpiler::get_binary_operation_details(BinaryOperation operation) {
@@ -133,9 +134,48 @@ void Transpiler::write_binary_operator_structs() {
     }
 }
 
+TS::Statement Transpiler::process_assignment_node(AssignmentNode* node) {
+    std::string& variable_name = node->variable_name;
+    SyntaxTreeNode* value_node = node->value;
+    TS::RValue* rvalue = nullptr;
+    switch (value_node->node_type) {
+        case SyntaxTreeNodeType::OPERAND: {
+            OperandNode* operand_node = dynamic_cast<OperandNode*>(value_node);
+            if (operand_node->operand_type == OperandType::IDENTIFIER) {
+                rvalue = new TS::InternalVariable(operand_node->identifier_value);
+            } else if (operand_node->operand_type == OperandType::LITERAL) {
+                rvalue = new TS::Literal(operand_node->literal_value);
+            } else {
+                throw std::exception();
+            }
+            break;
+        }
+    }
+    return TS::Statement(variable_name, rvalue);
+}
+
+TS::Statement Transpiler::process_statement_node(SyntaxTreeNode* node) {
+    switch (node->node_type) {
+        case SyntaxTreeNodeType::ASSIGNMENT:
+            return process_assignment_node(dynamic_cast<AssignmentNode*>(node));
+        default:
+            throw std::exception();
+    }
+}
+
+std::vector<TS::Statement> Transpiler::process_statement_sequence_node(StatementSequenceNode* node) {
+    std::vector<TS::Statement> ts_statements;
+    for (SyntaxTreeNode* node : node->statements) 
+        ts_statements.push_back(process_statement_node(node));
+    return ts_statements;
+}
+
 void Transpiler::run() {
     Interpreter interpreter(input_file_path);
     SyntaxTreeNode* root_node = interpreter.generate_syntax_tree();
+
+    // process_statement_sequence_node(root_node);
+
     output.open("output.cpp");
     write_binary_operator_structs();
     output.close();
