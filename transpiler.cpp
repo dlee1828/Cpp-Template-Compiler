@@ -125,7 +125,6 @@ So how will we handle this variable naming stuff?
 Within each struct-object have a list of variable names which are the ones inherited from the outer scope?
 Also keep track of current latest variable version?
 */
-
 void Transpiler::write_binary_operator_structs() {
     for (int i = 0; i < 12; i++) {
         BinaryOperation operation = static_cast<BinaryOperation>(i);
@@ -134,49 +133,77 @@ void Transpiler::write_binary_operator_structs() {
     }
 }
 
-TS::Statement Transpiler::process_assignment_node(AssignmentNode* node) {
+void Transpiler::new_template_struct(TS::TemplateStruct* template_struct) {
+    all_template_structs.push_back(template_struct);
+}
+
+TS::RValue* Transpiler::get_operand_rvalue(OperandNode* operand_node, TS::TemplateStruct* template_struct) {
+    if (operand_node->operand_type == OperandType::IDENTIFIER) {
+        std::string& identifer_value = operand_node->identifier_value;
+        std::string versioned = template_struct->get_versioned_variable_name(identifer_value);
+        return new TS::InternalVariable(versioned);
+    } else if (operand_node->operand_type == OperandType::LITERAL) {
+        return new TS::Literal(operand_node->literal_value);
+    } else {
+        std::cerr << "Operand node type not handled\n"; 
+        throw std::exception();
+    }
+}
+
+void Transpiler::process_assignment_node(AssignmentNode* node, TS::TemplateStruct* template_struct) {
     std::string& variable_name = node->variable_name;
     SyntaxTreeNode* value_node = node->value;
     TS::RValue* rvalue = nullptr;
     switch (value_node->node_type) {
         case SyntaxTreeNodeType::OPERAND: {
             OperandNode* operand_node = dynamic_cast<OperandNode*>(value_node);
-            if (operand_node->operand_type == OperandType::IDENTIFIER) {
-                rvalue = new TS::InternalVariable(operand_node->identifier_value);
-            } else if (operand_node->operand_type == OperandType::LITERAL) {
-                rvalue = new TS::Literal(operand_node->literal_value);
-            } else {
-                throw std::exception();
-            }
+            rvalue = get_operand_rvalue(operand_node, template_struct);
+            break;
+        }
+        case SyntaxTreeNodeType::BINARY_OPERATION: {
+            BinaryOperationNode* binary_operation_node = dynamic_cast<BinaryOperationNode*>(value_node);
+            TS::RValue* left_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(binary_operation_node->left_operand), template_struct);
+            TS::RValue* right_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(binary_operation_node->right_operand), template_struct);
             break;
         }
     }
-    return TS::Statement(variable_name, rvalue);
+
+    std::string versioned_variable_name = template_struct->add_or_update_variable(variable_name);
+
+    template_struct->add_statement(TS::Statement(versioned_variable_name, rvalue));
 }
 
-TS::Statement Transpiler::process_statement_node(SyntaxTreeNode* node) {
+void Transpiler::process_statement_sequence_node(StatementSequenceNode* node, TS::TemplateStruct* template_struct) {
+    for (SyntaxTreeNode* node : node->statements) 
+        process_syntax_tree_node(node, template_struct);
+}
+
+void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct) {
     switch (node->node_type) {
         case SyntaxTreeNodeType::ASSIGNMENT:
-            return process_assignment_node(dynamic_cast<AssignmentNode*>(node));
-        default:
+            return process_assignment_node(dynamic_cast<AssignmentNode*>(node), template_struct);
+        case SyntaxTreeNodeType::STATEMENT_SEQUENCE:
+            return process_statement_sequence_node(dynamic_cast<StatementSequenceNode*>(node), template_struct);
+        default: {
+            std::cerr << "Syntax tree node type not handled\n";
             throw std::exception();
+        }
     }
-}
-
-std::vector<TS::Statement> Transpiler::process_statement_sequence_node(StatementSequenceNode* node) {
-    std::vector<TS::Statement> ts_statements;
-    for (SyntaxTreeNode* node : node->statements) 
-        ts_statements.push_back(process_statement_node(node));
-    return ts_statements;
 }
 
 void Transpiler::run() {
     Interpreter interpreter(input_file_path);
     SyntaxTreeNode* root_node = interpreter.generate_syntax_tree();
 
-    // process_statement_sequence_node(root_node);
+    TS::TemplateStruct* root_template_struct = new TS::TemplateStruct();
+    new_template_struct(root_template_struct);
+
+    process_syntax_tree_node(root_node, root_template_struct);
 
     output.open("output.cpp");
     write_binary_operator_structs();
+
+    root_template_struct->write_to_file(output, "root_scope");
+
     output.close();
 }
