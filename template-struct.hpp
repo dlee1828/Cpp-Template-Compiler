@@ -5,12 +5,13 @@
 #include <string>
 #include <map>
 #include <fstream>
+#include "syntax-tree.hpp"
 
 namespace TS {
     class TemplateStruct;
 
     enum RValueType {
-        LITERAL, INTERNAL_VARIABLE, EXTERNAL_VARIABLE, UNDEFINED
+        LITERAL, INTERNAL_VARIABLE, EXTERNAL_VARIABLE, BINARY_OPERATION, UNDEFINED
     };
 
     struct RValue {
@@ -31,6 +32,15 @@ namespace TS {
         std::string to_string() override;
     };
 
+    struct BinaryOperationRValue : RValue {
+        RValue* left_operand;
+        RValue* right_operand;
+        BinaryOperation operation;
+        BinaryOperationRValue(BinaryOperation operation, RValue* left_operand, RValue* right_operand) : 
+        left_operand(left_operand), right_operand(right_operand), operation(operation), RValue(RValueType::BINARY_OPERATION) {}
+        std::string to_string() override;
+    };
+
     struct ExternalVariable : RValue {
         std::string variable_name;
         TemplateStruct* external_template_struct;
@@ -45,26 +55,27 @@ namespace TS {
         std::string to_string() override;
     };
 
-    class Statement {
-    private:
-        std::string variable_name;
-        RValue* rvalue;
-    public:
-        Statement(std::string variable_name, RValue* rvalue) : variable_name(variable_name), rvalue(rvalue) {}
-        std::string to_string();
-    };
 
     class TemplateStruct {
     private:
+        class Statement {
+        private:
+            std::string variable_name;
+            RValue* rvalue;
+        public:
+            Statement(std::string variable_name, RValue* rvalue) : variable_name(variable_name), rvalue(rvalue) {}
+            std::string to_string();
+        };
+
         std::vector<std::string> template_parameters;
         std::vector<Statement> statements;
         std::map<std::string, int> variable_versions;
-    public:
-        TemplateStruct(std::vector<std::string> template_parameters) : template_parameters(template_parameters) {}
-        TemplateStruct() : TemplateStruct(std::vector<std::string>()) {}
-        void add_statement(Statement statement) { statements.push_back(statement); }
-        std::string get_versioned_variable_name(const std::string& variable_name);
         std::string add_or_update_variable(const std::string& variable_name); 
+    public:
+        TemplateStruct(std::vector<std::string> template_parameters);
+        TemplateStruct() : TemplateStruct(std::vector<std::string>()) {}
+        void add_statement(std::string unversioned_variable_name, RValue* rvalue);
+        std::string get_versioned_variable_name(const std::string& variable_name);
         void write_to_file(std::ofstream& file, const std::string& template_struct_name);
     };
 }

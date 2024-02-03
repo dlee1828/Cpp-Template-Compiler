@@ -5,85 +5,12 @@
 #include "template-struct.hpp"
 #include <fstream>
 
-Transpiler::OperationDetails Transpiler::get_binary_operation_details(BinaryOperation operation) {
-    switch(operation) {
-        case BinaryOperation::ADD:
-            return {
-                .name = "ADD",
-                .expression = "x + y"
-            };
-        case BinaryOperation::SUBTRACT:
-            return {
-                .name = "SUBTRACT",
-                .expression = "x - y"
-            };
-        case BinaryOperation::MULTIPLY:
-            return {
-                .name = "MULTIPLY",
-                .expression = "x * y"
-            };
-        case BinaryOperation::DIVIDE:
-            return {
-                .name = "DIVIDE",
-                .expression = "x / y"
-            };
-        case BinaryOperation::MOD:
-            return {
-                .name = "MOD",
-                .expression = "x % y"
-            };
-        case BinaryOperation::LESS:
-            return {
-                .name = "LESS",
-                .expression = "x < y"
-            };
-        case BinaryOperation::LESS_EQUAL:
-            return {
-                .name = "LESS_EQUAL",
-                .expression = "x <= y"
-            };
-        case BinaryOperation::GREATER:
-            return {
-                .name = "GREATER",
-                .expression = "x > y"
-            };
-        case BinaryOperation::GREATER_EQUAL:
-            return {
-                .name = "GREATER_EQUAL",
-                .expression = "x >= y"
-            };
-        case BinaryOperation::EQUAL:
-            return {
-                .name = "EQUAL",
-                .expression = "x == y"
-            };
-        case BinaryOperation::NOT_EQUAL:
-            return {
-                .name = "NOT_EQUAL",
-                .expression = "x != y"
-            };
-        case BinaryOperation::AND:
-            return {
-                .name = "AND",
-                .expression = "(x != 0) && (y != 0)"
-            };
-        case BinaryOperation::OR:
-            return {
-                .name = "OR",
-                .expression = "(x != 0) || (y != 0)"
-            };
-    }
+TS::TemplateStruct* Transpiler::get_binary_operation_template_struct(BinaryOperation operation) {
+    TS::TemplateStruct* template_struct = new TS::TemplateStruct({"x", "y"});
+    TS::RValue* binary_operation_rvalue = new TS::BinaryOperationRValue(operation, new TS::InternalVariable("x"), new TS::InternalVariable("y"));
+    template_struct->add_statement("value", binary_operation_rvalue);
+    return template_struct;
 }
-
-std::string Transpiler::binary_operation_to_struct_definition(BinaryOperation operation) {
-    OperationDetails operation_details = get_binary_operation_details(operation);
-    std::string definition = 
-        "template <int x, int y>\n" + 
-        ("struct BINARY_OPERATION_" + operation_details.name + " {\n") + 
-        ("\tstatic constexpr int value = " + operation_details.expression + ";\n") +
-        "};\n";
-    return definition;
-};
 
 /*
 a = 1 ->
@@ -125,11 +52,12 @@ So how will we handle this variable naming stuff?
 Within each struct-object have a list of variable names which are the ones inherited from the outer scope?
 Also keep track of current latest variable version?
 */
-void Transpiler::write_binary_operator_structs() {
-    for (int i = 0; i < 12; i++) {
+void Transpiler::create_binary_operation_template_structs() {
+    for (int i = 0; i < BinaryOperation::_END; i++) {
         BinaryOperation operation = static_cast<BinaryOperation>(i);
-        std::string definition = binary_operation_to_struct_definition(operation);
-        output << definition << std::endl;
+        TS::TemplateStruct* template_struct = get_binary_operation_template_struct(operation);
+        binary_operation_template_structs[operation] = template_struct;
+        all_template_structs.push_back(template_struct);
     }
 }
 
@@ -168,9 +96,7 @@ void Transpiler::process_assignment_node(AssignmentNode* node, TS::TemplateStruc
         }
     }
 
-    std::string versioned_variable_name = template_struct->add_or_update_variable(variable_name);
-
-    template_struct->add_statement(TS::Statement(versioned_variable_name, rvalue));
+    template_struct->add_statement(variable_name, rvalue);
 }
 
 void Transpiler::process_statement_sequence_node(StatementSequenceNode* node, TS::TemplateStruct* template_struct) {
@@ -192,16 +118,16 @@ void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStru
 }
 
 void Transpiler::run() {
+    create_binary_operation_template_structs();
+
     Interpreter interpreter(input_file_path);
     SyntaxTreeNode* root_node = interpreter.generate_syntax_tree();
-
     TS::TemplateStruct* root_template_struct = new TS::TemplateStruct();
     new_template_struct(root_template_struct);
 
     process_syntax_tree_node(root_node, root_template_struct);
 
     output.open("output.cpp");
-    write_binary_operator_structs();
 
     root_template_struct->write_to_file(output, "root_scope");
 

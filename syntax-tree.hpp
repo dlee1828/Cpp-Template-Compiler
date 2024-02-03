@@ -8,6 +8,9 @@
 #include <set>
 #include <unordered_set>
 #include <iostream>
+
+#include "binary-operation.hpp"
+
 class Variables {
 private:
     using VariableMap = std::map<std::string, int>;
@@ -91,9 +94,6 @@ struct AssignmentNode : SyntaxTreeNode {
     AssignmentNode(std::string variable_name, SyntaxTreeNode* value, Variables& variables) : variable_name(variable_name), value(value), SyntaxTreeNode(ASSIGNMENT, variables) {}
 };
 
-enum BinaryOperation {
-    ADD, SUBTRACT, MULTIPLY, DIVIDE, MOD, LESS, LESS_EQUAL, GREATER, GREATER_EQUAL, EQUAL, NOT_EQUAL, AND, OR
-};
 
 struct BinaryOperationNode : SyntaxTreeNode {
     BinaryOperation operation;
