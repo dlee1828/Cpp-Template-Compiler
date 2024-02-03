@@ -20,5 +20,4 @@ public:
     Transpiler(std::string input_file_path) : input_file_path(input_file_path) {}
     void run();
 };
-
 #endif

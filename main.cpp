@@ -8,6 +8,5 @@ int main(int argc, char *argv[]) {
     // Interpreter p(argv[1]);
     Transpiler x("test.txt");
     x.run();
-     //
     return 0;
 }
