@@ -1,3 +1,4 @@
+#include "binary-operation.hpp"
 #include <iostream>
 #include <format>
 #include "transpiler.hpp"
@@ -6,7 +7,7 @@
 #include <fstream>
 
 TS::TemplateStruct* Transpiler::get_binary_operation_template_struct(BinaryOperation operation) {
-    TS::TemplateStruct* template_struct = new TS::TemplateStruct({"x", "y"});
+    TS::TemplateStruct* template_struct = new TS::TemplateStruct(get_binary_operation_details(operation).name, {"x", "y"});
     TS::RValue* binary_operation_rvalue = new TS::BinaryOperationRValue(operation, new TS::InternalVariable("x"), new TS::InternalVariable("y"));
     template_struct->add_statement("value", binary_operation_rvalue);
     return template_struct;
@@ -92,6 +93,7 @@ void Transpiler::process_assignment_node(AssignmentNode* node, TS::TemplateStruc
             BinaryOperationNode* binary_operation_node = dynamic_cast<BinaryOperationNode*>(value_node);
             TS::RValue* left_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(binary_operation_node->left_operand), template_struct);
             TS::RValue* right_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(binary_operation_node->right_operand), template_struct);
+            rvalue = new TS::ExternalVariable("value", binary_operation_template_structs[binary_operation_node->operation], {left_rvalue, right_rvalue});
             break;
         }
     }
@@ -117,19 +119,25 @@ void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStru
     }
 }
 
+void Transpiler::print_all_template_structs() {
+    for (TS::TemplateStruct* template_struct : all_template_structs) {
+        template_struct->write_to_file(output);
+    }
+}
+
 void Transpiler::run() {
     create_binary_operation_template_structs();
 
     Interpreter interpreter(input_file_path);
     SyntaxTreeNode* root_node = interpreter.generate_syntax_tree();
-    TS::TemplateStruct* root_template_struct = new TS::TemplateStruct();
+    TS::TemplateStruct* root_template_struct = new TS::TemplateStruct("root");
     new_template_struct(root_template_struct);
 
     process_syntax_tree_node(root_node, root_template_struct);
 
     output.open("output.cpp");
 
-    root_template_struct->write_to_file(output, "root_scope");
+    print_all_template_structs();
 
     output.close();
 }

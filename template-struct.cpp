@@ -1,7 +1,7 @@
 #include "template-struct.hpp"
 #include <iostream>
 
-TS::TemplateStruct::TemplateStruct(std::vector<std::string> template_parameters) : template_parameters(template_parameters) {
+TS::TemplateStruct::TemplateStruct(std::string name, std::vector<std::string> template_parameters) : name(name), template_parameters(template_parameters) {
     for (std::string& param : template_parameters) 
         variable_versions[param] = 0; // version 0 is reserved for template parameters
 }
@@ -51,7 +51,7 @@ std::string TS::TemplateStruct::Statement::to_string() {
     return "static constexpr int " + variable_name + " = " + rvalue->to_string() + ";";
 }
 
-void TS::TemplateStruct::write_to_file(std::ofstream& file, const std::string& template_struct_name) {
+void TS::TemplateStruct::write_to_file(std::ofstream& file) {
     if (template_parameters.size() > 0) {
         file << "template <";
         for (int i = 0; i < template_parameters.size(); i++) {
@@ -61,7 +61,7 @@ void TS::TemplateStruct::write_to_file(std::ofstream& file, const std::string& t
         file << ">" << "\n";
     }
 
-    file << "struct " << template_struct_name << " {";
+    file << "struct " << name << " {";
     file << "\n";
 
     for (Statement statement : statements) 

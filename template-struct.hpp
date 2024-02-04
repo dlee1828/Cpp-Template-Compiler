@@ -66,17 +66,17 @@ namespace TS {
             Statement(std::string variable_name, RValue* rvalue) : variable_name(variable_name), rvalue(rvalue) {}
             std::string to_string();
         };
-
+        std::string name;
         std::vector<std::string> template_parameters;
         std::vector<Statement> statements;
         std::map<std::string, int> variable_versions;
         std::string add_or_update_variable(const std::string& variable_name); 
     public:
-        TemplateStruct(std::vector<std::string> template_parameters);
-        TemplateStruct() : TemplateStruct(std::vector<std::string>()) {}
+        TemplateStruct(std::string name, std::vector<std::string> template_parameters);
+        TemplateStruct(std::string name) : TemplateStruct(name, std::vector<std::string>()) {}
         void add_statement(std::string unversioned_variable_name, RValue* rvalue);
         std::string get_versioned_variable_name(const std::string& variable_name);
-        void write_to_file(std::ofstream& file, const std::string& template_struct_name);
+        void write_to_file(std::ofstream& file);
     };
 }
 

@@ -22,6 +22,7 @@ private:
     void process_assignment_node(AssignmentNode* node, TS::TemplateStruct* template_struct);
     void process_statement_sequence_node(StatementSequenceNode* node, TS::TemplateStruct* template_struct); 
     void process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct);
+    void print_all_template_structs();
 
 public:
     Transpiler(std::string input_file_path) : input_file_path(input_file_path) {}
