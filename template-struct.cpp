@@ -1,4 +1,5 @@
 #include "template-struct.hpp"
+#include "debug.hpp"
 #include <iostream>
 
 TS::TemplateStruct::TemplateStruct(std::string name, std::vector<std::string> template_parameters) : name(name), template_parameters(template_parameters) {
@@ -16,11 +17,11 @@ std::string TS::InternalVariable::to_string() {
 }
 
 std::string TS::ExternalVariable::to_string() {
-    return "not implemented yet";
+    return external_template_struct->get_variable_reference(unversioned_variable_name, template_arguments);
 }
 
 std::string TS::BinaryOperationRValue::to_string() {
-
+    return left_operand->to_string() + " " + get_binary_operation_details(operation).symbol + " " + right_operand->to_string();
 }
 
 void TS::TemplateStruct::add_statement(std::string unversioned_variable_name, RValue* rvalue) {
@@ -67,5 +68,21 @@ void TS::TemplateStruct::write_to_file(std::ofstream& file) {
     for (Statement statement : statements) 
         file << "\t" << statement.to_string() << "\n";
 
-    file << "};";
+    file << "};\n";
+}
+
+
+std::string TS::TemplateStruct::get_variable_reference(std::string unversioned_variable_name, std::vector<RValue*> template_arguments) {
+    std::string result = name;
+    if (template_arguments.size() > 0) {
+        result += "<";
+        for (int i = 0; i < template_arguments.size(); i++) {
+            result += template_arguments[i]->to_string();
+            if (i != template_arguments.size() - 1) result += ", ";
+        }
+        result += ">";
+    }
+    result += "::";
+    result += get_versioned_variable_name(unversioned_variable_name);
+    return result;
 }

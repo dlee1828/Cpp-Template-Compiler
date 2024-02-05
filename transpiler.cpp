@@ -96,8 +96,9 @@ void Transpiler::process_assignment_node(AssignmentNode* node, TS::TemplateStruc
             rvalue = new TS::ExternalVariable("value", binary_operation_template_structs[binary_operation_node->operation], {left_rvalue, right_rvalue});
             break;
         }
+        default:
+            break;
     }
-
     template_struct->add_statement(variable_name, rvalue);
 }
 

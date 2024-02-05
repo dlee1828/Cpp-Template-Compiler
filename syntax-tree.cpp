@@ -175,6 +175,8 @@ SyntaxTreeNode::EvaluationResult BinaryOperationNode::evaluate() {
         case BinaryOperation::OR:
             expression_value = (left_value != 0) || (right_value != 0);
             break;
+        default:
+            break;
     }
 
     result.expression_value = expression_value;

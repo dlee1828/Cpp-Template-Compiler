@@ -42,12 +42,12 @@ namespace TS {
     };
 
     struct ExternalVariable : RValue {
-        std::string variable_name;
+        std::string unversioned_variable_name;
         TemplateStruct* external_template_struct;
         std::vector<RValue*> template_arguments;
-        ExternalVariable(std::string variable_name, TemplateStruct* external_template_struct, std::vector<RValue*> template_arguments) : 
+        ExternalVariable(std::string unversioned_variable_name, TemplateStruct* external_template_struct, std::vector<RValue*> template_arguments) : 
         RValue(RValueType::INTERNAL_VARIABLE), 
-        variable_name(variable_name), 
+        unversioned_variable_name(unversioned_variable_name), 
         external_template_struct(external_template_struct), 
         template_arguments(template_arguments)
         {}
@@ -77,6 +77,7 @@ namespace TS {
         void add_statement(std::string unversioned_variable_name, RValue* rvalue);
         std::string get_versioned_variable_name(const std::string& variable_name);
         void write_to_file(std::ofstream& file);
+        std::string get_variable_reference(std::string unversioned_variable_name, std::vector<RValue*> template_arguments);
     };
 }
 
