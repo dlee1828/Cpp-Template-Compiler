@@ -54,6 +54,7 @@ Within each struct-object have a list of variable names which are the ones inher
 Also keep track of current latest variable version?
 */
 void Transpiler::create_binary_operation_template_structs() {
+    print("creating binary operation template structs");
     for (int i = 0; i < BinaryOperation::_END; i++) {
         BinaryOperation operation = static_cast<BinaryOperation>(i);
         TS::TemplateStruct* template_struct = get_binary_operation_template_struct(operation);
@@ -67,11 +68,14 @@ void Transpiler::new_template_struct(TS::TemplateStruct* template_struct) {
 }
 
 TS::RValue* Transpiler::get_operand_rvalue(OperandNode* operand_node, TS::TemplateStruct* template_struct) {
+    print("Getting operand rvalue");
     if (operand_node->operand_type == OperandType::IDENTIFIER) {
+        print("Operand has type identifier");
         std::string& identifer_value = operand_node->identifier_value;
         std::string versioned = template_struct->get_versioned_variable_name(identifer_value);
         return new TS::InternalVariable(versioned);
     } else if (operand_node->operand_type == OperandType::LITERAL) {
+        print("Operand has type literal");
         return new TS::Literal(operand_node->literal_value);
     } else {
         std::cerr << "Operand node type not handled\n"; 
@@ -79,32 +83,71 @@ TS::RValue* Transpiler::get_operand_rvalue(OperandNode* operand_node, TS::Templa
     }
 }
 
+TS::RValue* Transpiler::get_rvalue_from_binary_operation_node(BinaryOperationNode* node, TS::TemplateStruct* template_struct) {
+    print("Getting rvalue from binary operation node");
+    TS::RValue* left_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(node->left_operand), template_struct);
+    TS::RValue* right_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(node->right_operand), template_struct);
+    return new TS::ExternalVariable("value", binary_operation_template_structs[node->operation], {left_rvalue, right_rvalue});
+}
+
 void Transpiler::process_assignment_node(AssignmentNode* node, TS::TemplateStruct* template_struct) {
+    print("> Processing assignment node");
     std::string& variable_name = node->variable_name;
     SyntaxTreeNode* value_node = node->value;
     TS::RValue* rvalue = nullptr;
     switch (value_node->node_type) {
         case SyntaxTreeNodeType::OPERAND: {
+            print("Assignment value node type is operand");
             OperandNode* operand_node = dynamic_cast<OperandNode*>(value_node);
             rvalue = get_operand_rvalue(operand_node, template_struct);
             break;
         }
         case SyntaxTreeNodeType::BINARY_OPERATION: {
+            print("Assignment value node type is binary operation");
             BinaryOperationNode* binary_operation_node = dynamic_cast<BinaryOperationNode*>(value_node);
-            TS::RValue* left_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(binary_operation_node->left_operand), template_struct);
-            TS::RValue* right_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(binary_operation_node->right_operand), template_struct);
-            rvalue = new TS::ExternalVariable("value", binary_operation_template_structs[binary_operation_node->operation], {left_rvalue, right_rvalue});
+            rvalue = get_rvalue_from_binary_operation_node(binary_operation_node, template_struct);
             break;
         }
-        default:
+        default: {
+            std::cerr << "Unhandled assignment value node type";
+            throw std::exception();
             break;
+        }
     }
+    print("Finished processing assignment node, about to add statement");
     template_struct->add_statement(variable_name, rvalue);
 }
 
 void Transpiler::process_statement_sequence_node(StatementSequenceNode* node, TS::TemplateStruct* template_struct) {
+    print("> Processing statement sequence node");
     for (SyntaxTreeNode* node : node->statements) 
         process_syntax_tree_node(node, template_struct);
+}
+
+void Transpiler::process_if_else_node(IfElseNode* node, TS::TemplateStruct* template_struct) {
+    print("> Processing if else node");
+    // assume condition is a binary operation node
+    BinaryOperationNode* condition = dynamic_cast<BinaryOperationNode*>(node->condition);
+    TS::RValue* condition_rvalue = get_rvalue_from_binary_operation_node(condition, template_struct);
+    print("Finished getting rvalue from binary operation node");
+
+    TS::TemplateStruct* base_body_template_struct = new TS::TemplateStruct("if_body", {"condition_value"}, {}, template_struct);
+
+    TS::TemplateStruct* if_body_template_struct = new TS::TemplateStruct("if_body", {"condition_value"}, {"true"}, template_struct);
+    process_syntax_tree_node(node->if_block, if_body_template_struct);
+
+    all_template_structs.push_back(base_body_template_struct);
+    all_template_structs.push_back(if_body_template_struct);
+
+    TS::TemplateStruct* else_body_template_struct = nullptr;
+    if (node->else_block->node_type != SyntaxTreeNodeType::EMPTY) {
+        else_body_template_struct = new TS::TemplateStruct("if_body", {"condition_value"}, {"false"}, template_struct);
+        process_syntax_tree_node(node->else_block, else_body_template_struct);
+        all_template_structs.push_back(else_body_template_struct);
+    }
+
+
+    template_struct->retrieve_local_variables_from_child(base_body_template_struct, {condition_rvalue});
 }
 
 void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct) {
@@ -113,6 +156,8 @@ void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStru
             return process_assignment_node(dynamic_cast<AssignmentNode*>(node), template_struct);
         case SyntaxTreeNodeType::STATEMENT_SEQUENCE:
             return process_statement_sequence_node(dynamic_cast<StatementSequenceNode*>(node), template_struct);
+        case SyntaxTreeNodeType::IF_ELSE:
+            return process_if_else_node(dynamic_cast<IfElseNode*>(node), template_struct);
         default: {
             std::cerr << "Syntax tree node type not handled\n";
             throw std::exception();

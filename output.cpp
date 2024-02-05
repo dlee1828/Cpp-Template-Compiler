@@ -52,12 +52,14 @@ struct OR {
 };
 struct root {
 	static constexpr int a_1 = 1;
-	static constexpr int b_1 = 2;
-	static constexpr int c_1 = ADD<a_1, b_1>::value_1;
-	static constexpr int d_1 = SUBTRACT<5, 3>::value_1;
-	static constexpr int e_1 = ADD<d_1, 77>::value_1;
-	static constexpr int e_2 = ADD<e_1, 1>::value_1;
-	static constexpr int e_3 = ADD<e_2, 1>::value_1;
-	static constexpr int e_4 = ADD<e_3, 1>::value_1;
-	static constexpr int e_5 = ADD<e_4, 1>::value_1;
+	static constexpr int b_1 = 0;
+	static constexpr int a_2 = if_body<EQUAL<a_1, 1>::value_1, a_1, b_1>::a;
+	static constexpr int b_2 = if_body<EQUAL<a_1, 1>::value_1, a_1, b_1>::b;
+};
+template <int condition_value>
+struct if_body {
+};
+template <int condition_value>
+struct if_body {
+	static constexpr int b_1 = 1;
 };

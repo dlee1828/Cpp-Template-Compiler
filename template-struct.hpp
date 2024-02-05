@@ -68,16 +68,19 @@ namespace TS {
         };
         std::string name;
         std::vector<std::string> template_parameters;
+        std::vector<std::string> template_arguments;
         std::vector<Statement> statements;
         std::map<std::string, int> variable_versions;
         std::string add_or_update_variable(const std::string& variable_name); 
     public:
-        TemplateStruct(std::string name, std::vector<std::string> template_parameters);
-        TemplateStruct(std::string name) : TemplateStruct(name, std::vector<std::string>()) {}
+        TemplateStruct(std::string name, std::vector<std::string> template_parameters = {}, std::vector<std::string> template_arguments = {}, TS::TemplateStruct* base_template_struct = nullptr);
         void add_statement(std::string unversioned_variable_name, RValue* rvalue);
         std::string get_versioned_variable_name(const std::string& variable_name);
         void write_to_file(std::ofstream& file);
-        std::string get_variable_reference(std::string unversioned_variable_name, std::vector<RValue*> template_arguments);
+        std::string get_variable_reference(std::string unversioned_variable_name, std::vector<RValue*> template_arguments, TS::TemplateStruct* base_template_struct = nullptr);
+        std::vector<std::string> get_all_unversioned_variable_names();
+        std::vector<std::string> get_all_versioned_variable_names();
+        void retrieve_local_variables_from_child(TS::TemplateStruct* child_template_struct, std::vector<TS::RValue*> template_arguments);
     };
 }
 

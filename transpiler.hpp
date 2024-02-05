@@ -18,9 +18,12 @@ private:
 
     TS::RValue* get_operand_rvalue(OperandNode* operand_node, TS::TemplateStruct* template_struct);
 
+    TS::RValue* get_rvalue_from_binary_operation_node(BinaryOperationNode* node, TS::TemplateStruct* template_struct);
+
     void create_binary_operation_template_structs();
     void process_assignment_node(AssignmentNode* node, TS::TemplateStruct* template_struct);
     void process_statement_sequence_node(StatementSequenceNode* node, TS::TemplateStruct* template_struct); 
+    void process_if_else_node(IfElseNode* node, TS::TemplateStruct* template_struct);
     void process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct);
     void print_all_template_structs();
 
