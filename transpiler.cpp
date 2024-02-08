@@ -63,10 +63,6 @@ void Transpiler::create_binary_operation_template_structs() {
     }
 }
 
-void Transpiler::new_template_struct(TS::TemplateStruct* template_struct) {
-    all_template_structs.push_back(template_struct);
-}
-
 TS::RValue* Transpiler::get_operand_rvalue(OperandNode* operand_node, TS::TemplateStruct* template_struct) {
     print("Getting operand rvalue");
     if (operand_node->operand_type == OperandType::IDENTIFIER) {
@@ -132,21 +128,20 @@ void Transpiler::process_if_else_node(IfElseNode* node, TS::TemplateStruct* temp
     print("Finished getting rvalue from binary operation node");
 
     TS::TemplateStruct* base_body_template_struct = new TS::TemplateStruct("if_else", {"condition_value"}, {}, template_struct);
-    print("Printing template parameters for base body template struct");
-    for (auto s : base_body_template_struct->get_template_parameters()) {
-        print(s);
-    }
+    base_body_template_struct->add_final_value_assignments();
 
-    TS::TemplateStruct* if_body_template_struct = new TS::TemplateStruct("if_else", {"condition_value"}, {"true"}, template_struct);
+    TS::TemplateStruct* if_body_template_struct = new TS::TemplateStruct("if_else", {}, {"1"}, template_struct);
     process_syntax_tree_node(node->if_block, if_body_template_struct);
+    if_body_template_struct->add_final_value_assignments();
 
     all_template_structs.push_back(base_body_template_struct);
     all_template_structs.push_back(if_body_template_struct);
 
     TS::TemplateStruct* else_body_template_struct = nullptr;
     if (node->else_block->node_type != SyntaxTreeNodeType::EMPTY) {
-        else_body_template_struct = new TS::TemplateStruct("if_else", {"condition_value"}, {"false"}, template_struct);
+        else_body_template_struct = new TS::TemplateStruct("if_else", {}, {"0"}, template_struct);
         process_syntax_tree_node(node->else_block, else_body_template_struct);
+        else_body_template_struct->add_final_value_assignments();
         all_template_structs.push_back(else_body_template_struct);
     }
 
@@ -183,9 +178,10 @@ void Transpiler::run() {
     Interpreter interpreter(input_file_path);
     SyntaxTreeNode* root_node = interpreter.generate_syntax_tree();
     TS::TemplateStruct* root_template_struct = new TS::TemplateStruct("root");
-    new_template_struct(root_template_struct);
 
     process_syntax_tree_node(root_node, root_template_struct);
+
+    all_template_structs.push_back(root_template_struct);
 
     output.open("output.cpp");
 

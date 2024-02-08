@@ -14,8 +14,6 @@ private:
     std::ofstream output;
     TS::TemplateStruct* get_binary_operation_template_struct(BinaryOperation operation);
 
-    void new_template_struct(TS::TemplateStruct* template_struct);
-
     TS::RValue* get_operand_rvalue(OperandNode* operand_node, TS::TemplateStruct* template_struct);
 
     TS::RValue* get_rvalue_from_binary_operation_node(BinaryOperationNode* node, TS::TemplateStruct* template_struct);

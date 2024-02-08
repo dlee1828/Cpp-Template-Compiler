@@ -71,6 +71,7 @@ namespace TS {
         std::vector<std::string> template_arguments;
         std::vector<Statement> statements;
         std::map<std::string, int> variable_versions;
+        bool variables_are_finalized = false;
         std::string add_or_update_variable(const std::string& variable_name); 
     public:
         TemplateStruct(std::string name, std::vector<std::string> template_parameters = {}, std::vector<std::string> template_arguments = {}, TS::TemplateStruct* base_template_struct = nullptr);
@@ -83,6 +84,7 @@ namespace TS {
         void retrieve_local_variables_from_child(TS::TemplateStruct* child_template_struct, std::vector<TS::RValue*> template_arguments);
         std::vector<std::string> get_template_parameters() { return this->template_parameters; }
         std::string get_name() { return this->name; }
+        void add_final_value_assignments();
     };
 }
 

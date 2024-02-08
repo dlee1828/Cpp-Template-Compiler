@@ -59,8 +59,9 @@ std::string TS::TemplateStruct::get_versioned_variable_name(const std::string& v
         throw std::exception();
     }
 
-    int version_number = variable_versions[variable_name];
+    if (this->variables_are_finalized) return variable_name + "_final";
 
+    int version_number = variable_versions[variable_name];
     if (version_number == 0) return variable_name;
     else return variable_name + "_" + std::to_string(version_number);
 }
@@ -81,7 +82,7 @@ std::string TS::TemplateStruct::Statement::to_string() {
 }
 
 void TS::TemplateStruct::write_to_file(std::ofstream& file) {
-    if (template_parameters.size() > 0) {
+    if (this->template_parameters.size() > 0) {
         file << "template <";
         for (int i = 0; i < template_parameters.size(); i++) {
             file << "int " << template_parameters[i];
@@ -90,7 +91,18 @@ void TS::TemplateStruct::write_to_file(std::ofstream& file) {
         file << ">" << "\n";
     }
 
-    file << "struct " << name << " {";
+    file << "struct " << name;
+
+    if (this->template_arguments.size() > 0) {
+        file << "<";
+        for (int i = 0; i < template_arguments.size(); i++) {
+            file << template_arguments[i];
+            if (i != template_arguments.size() - 1) file << ", ";
+        }
+        file << ">";
+    }
+
+    file << " {";
     file << "\n";
 
     for (Statement statement : statements) 
@@ -156,4 +168,14 @@ void TS::TemplateStruct::retrieve_local_variables_from_child(TS::TemplateStruct*
         print("About to add statement");
         add_statement(unversioned_variable_name, rvalue);
     }
+}
+
+void TS::TemplateStruct::add_final_value_assignments() {
+    std::map<std::string, std::string> assignment_values;
+    for (auto [unversioned_variable_name, _] : this->variable_versions) 
+        assignment_values[unversioned_variable_name] = this->get_versioned_variable_name(unversioned_variable_name);
+
+    this->variables_are_finalized = true;
+    for (auto [unversioned_variable_name, _] : this->variable_versions)
+        this->add_statement(unversioned_variable_name, new InternalVariable(assignment_values[unversioned_variable_name]));
 }
