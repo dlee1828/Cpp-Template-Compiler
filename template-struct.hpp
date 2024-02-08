@@ -27,8 +27,8 @@ namespace TS {
     };
 
     struct InternalVariable : RValue {
-        std::string variable_name;
-        InternalVariable(std::string variable_name) : RValue(RValueType::INTERNAL_VARIABLE), variable_name(variable_name) {}
+        std::string versioned_variable_name;
+        InternalVariable(std::string versioned_variable_name) : RValue(RValueType::INTERNAL_VARIABLE), versioned_variable_name(versioned_variable_name) {}
         std::string to_string() override;
     };
 
@@ -81,6 +81,8 @@ namespace TS {
         std::vector<std::string> get_all_unversioned_variable_names();
         std::vector<std::string> get_all_versioned_variable_names();
         void retrieve_local_variables_from_child(TS::TemplateStruct* child_template_struct, std::vector<TS::RValue*> template_arguments);
+        std::vector<std::string> get_template_parameters() { return this->template_parameters; }
+        std::string get_name() { return this->name; }
     };
 }
 

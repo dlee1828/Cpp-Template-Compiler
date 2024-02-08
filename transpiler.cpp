@@ -131,9 +131,13 @@ void Transpiler::process_if_else_node(IfElseNode* node, TS::TemplateStruct* temp
     TS::RValue* condition_rvalue = get_rvalue_from_binary_operation_node(condition, template_struct);
     print("Finished getting rvalue from binary operation node");
 
-    TS::TemplateStruct* base_body_template_struct = new TS::TemplateStruct("if_body", {"condition_value"}, {}, template_struct);
+    TS::TemplateStruct* base_body_template_struct = new TS::TemplateStruct("if_else", {"condition_value"}, {}, template_struct);
+    print("Printing template parameters for base body template struct");
+    for (auto s : base_body_template_struct->get_template_parameters()) {
+        print(s);
+    }
 
-    TS::TemplateStruct* if_body_template_struct = new TS::TemplateStruct("if_body", {"condition_value"}, {"true"}, template_struct);
+    TS::TemplateStruct* if_body_template_struct = new TS::TemplateStruct("if_else", {"condition_value"}, {"true"}, template_struct);
     process_syntax_tree_node(node->if_block, if_body_template_struct);
 
     all_template_structs.push_back(base_body_template_struct);
@@ -141,13 +145,15 @@ void Transpiler::process_if_else_node(IfElseNode* node, TS::TemplateStruct* temp
 
     TS::TemplateStruct* else_body_template_struct = nullptr;
     if (node->else_block->node_type != SyntaxTreeNodeType::EMPTY) {
-        else_body_template_struct = new TS::TemplateStruct("if_body", {"condition_value"}, {"false"}, template_struct);
+        else_body_template_struct = new TS::TemplateStruct("if_else", {"condition_value"}, {"false"}, template_struct);
         process_syntax_tree_node(node->else_block, else_body_template_struct);
         all_template_structs.push_back(else_body_template_struct);
     }
 
-
+    // This is a bit of an issue.
     template_struct->retrieve_local_variables_from_child(base_body_template_struct, {condition_rvalue});
+
+    print("Successfully processed if else node");
 }
 
 void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct) {

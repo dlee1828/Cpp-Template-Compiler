@@ -53,13 +53,17 @@ struct OR {
 struct root {
 	static constexpr int a_1 = 1;
 	static constexpr int b_1 = 0;
-	static constexpr int a_2 = if_body<EQUAL<a_1, 1>::value_1, a_1, b_1>::a;
-	static constexpr int b_2 = if_body<EQUAL<a_1, 1>::value_1, a_1, b_1>::b;
+	static constexpr int a_2 = if_else<EQUAL<a_1, 1>::value_1, a_1, b_1>::a_1;
+	static constexpr int b_2 = if_else<EQUAL<a_1, 1>::value_1, a_1, b_1>::b_1;
 };
-template <int condition_value>
-struct if_body {
+template <int condition_value, int a, int b>
+struct if_else {
+	static constexpr int a_1 = a;
+	static constexpr int b_1 = b;
 };
-template <int condition_value>
-struct if_body {
-	static constexpr int b_1 = 1;
+template <int condition_value, int a, int b>
+struct if_else {
+	static constexpr int a_1 = a;
+	static constexpr int b_1 = b;
+	static constexpr int b_2 = 1;
 };
