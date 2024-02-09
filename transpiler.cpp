@@ -6,6 +6,12 @@
 #include "template-struct.hpp"
 #include <fstream>
 
+std::string Transpiler::make_unique_struct_name(std::string base_name) {
+    std::string unique_name = base_name + "_" + std::to_string(this->unique_struct_name_counter);
+    this->unique_struct_name_counter++;
+    return unique_name;
+}
+
 TS::TemplateStruct* Transpiler::get_binary_operation_template_struct(BinaryOperation operation) {
     TS::TemplateStruct* template_struct = new TS::TemplateStruct(get_binary_operation_details(operation).name, {"x", "y"});
     TS::RValue* binary_operation_rvalue = new TS::BinaryOperationRValue(operation, new TS::InternalVariable("x"), new TS::InternalVariable("y"));
@@ -127,10 +133,12 @@ void Transpiler::process_if_else_node(IfElseNode* node, TS::TemplateStruct* temp
     TS::RValue* condition_rvalue = get_rvalue_from_binary_operation_node(condition, template_struct);
     print("Finished getting rvalue from binary operation node");
 
-    TS::TemplateStruct* base_body_template_struct = new TS::TemplateStruct("if_else", {"condition_value"}, {}, template_struct);
+    std::string if_else_struct_name = this->make_unique_struct_name("if_else");
+
+    TS::TemplateStruct* base_body_template_struct = new TS::TemplateStruct(if_else_struct_name, {"condition_value"}, {}, template_struct);
     base_body_template_struct->add_final_value_assignments();
 
-    TS::TemplateStruct* if_body_template_struct = new TS::TemplateStruct("if_else", {}, {"1"}, template_struct);
+    TS::TemplateStruct* if_body_template_struct = new TS::TemplateStruct(if_else_struct_name, {}, {"1"}, template_struct);
     process_syntax_tree_node(node->if_block, if_body_template_struct);
     if_body_template_struct->add_final_value_assignments();
 
@@ -139,13 +147,12 @@ void Transpiler::process_if_else_node(IfElseNode* node, TS::TemplateStruct* temp
 
     TS::TemplateStruct* else_body_template_struct = nullptr;
     if (node->else_block->node_type != SyntaxTreeNodeType::EMPTY) {
-        else_body_template_struct = new TS::TemplateStruct("if_else", {}, {"0"}, template_struct);
+        else_body_template_struct = new TS::TemplateStruct(if_else_struct_name, {}, {"0"}, template_struct);
         process_syntax_tree_node(node->else_block, else_body_template_struct);
         else_body_template_struct->add_final_value_assignments();
         all_template_structs.push_back(else_body_template_struct);
     }
 
-    // This is a bit of an issue.
     template_struct->retrieve_local_variables_from_child(base_body_template_struct, {condition_rvalue});
 
     print("Successfully processed if else node");

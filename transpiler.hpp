@@ -25,6 +25,9 @@ private:
     void process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct);
     void print_all_template_structs();
 
+    int unique_struct_name_counter = 0;
+    std::string make_unique_struct_name(std::string base_name);
+
 public:
     Transpiler(std::string input_file_path) : input_file_path(input_file_path) {}
     void run();
