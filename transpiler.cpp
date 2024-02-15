@@ -6,7 +6,7 @@
 #include "template-struct.hpp"
 #include <fstream>
 
-std::string Transpiler::make_unique_struct_name(std::string base_name) {
+std::string Transpiler::create_unique_struct_name(std::string base_name) {
     std::string unique_name = base_name + "_" + std::to_string(this->unique_struct_name_counter);
     this->unique_struct_name_counter++;
     return unique_name;
@@ -133,7 +133,7 @@ void Transpiler::process_if_else_node(IfElseNode* node, TS::TemplateStruct* temp
     TS::RValue* condition_rvalue = get_rvalue_from_binary_operation_node(condition, template_struct);
     print("Finished getting rvalue from binary operation node");
 
-    std::string if_else_struct_name = this->make_unique_struct_name("if_else");
+    std::string if_else_struct_name = this->create_unique_struct_name("if_else");
 
     TS::TemplateStruct* base_body_template_struct = new TS::TemplateStruct(if_else_struct_name, {"condition_value"}, {}, template_struct);
     base_body_template_struct->add_final_value_assignments();
@@ -158,6 +158,55 @@ void Transpiler::process_if_else_node(IfElseNode* node, TS::TemplateStruct* temp
     print("Successfully processed if else node");
 }
 
+void Transpiler::process_while_node(WhileNode* node, TS::TemplateStruct* template_struct) {
+    BinaryOperationNode* condition = dynamic_cast<BinaryOperationNode*>(node->condition);
+
+    std::string while_parent_struct_name = this->create_unique_struct_name("while_parent");
+    TS::TemplateStruct* while_parent_struct = new TS::TemplateStruct(while_parent_struct_name, {"condition"}, {}, template_struct);
+
+    TS::TemplateStruct* while_parent_false_struct = new TS::TemplateStruct(while_parent_struct_name, {}, {"0"}, template_struct);
+    while_parent_false_struct->add_final_value_assignments();
+
+    std::string while_body_struct_name = this->create_unique_struct_name("while_body");
+    std::set<std::string> condition_set;
+    TS::TemplateStruct* while_body_struct = new TS::TemplateStruct(while_body_struct_name, {}, {}, while_parent_struct, {"condition"});
+    this->process_syntax_tree_node(node->body, while_body_struct);
+    while_body_struct->add_final_value_assignments();
+
+    // manually write the recursive statements for while_parent_struct
+    TS::RValue* condition_rvalue_in_parent_struct = this->get_rvalue_from_binary_operation_node(condition, while_parent_struct);
+
+    std::vector<std::string> unversioned_variables = while_parent_struct->get_all_unversioned_variable_names();
+    std::vector<std::string> unversioned_variables_excluding_condition = {};
+    for (std::string variable : unversioned_variables) {
+        if (variable != "condition") unversioned_variables_excluding_condition.push_back(variable);
+    }
+
+    std::vector<TS::RValue*> internal_variable_rvalues;
+    for (std::string variable : unversioned_variables_excluding_condition) {
+        internal_variable_rvalues.push_back(new TS::InternalVariable(while_parent_struct->get_versioned_variable_name(variable)));
+    }
+
+    while_parent_struct->set_values_as_final();
+    std::vector<TS::RValue*> recursive_template_arguments = {condition_rvalue_in_parent_struct};
+    for (std::string variable : unversioned_variables_excluding_condition) {
+        recursive_template_arguments.push_back(
+            new TS::ExternalVariable(variable, while_body_struct, internal_variable_rvalues)
+        );
+    }
+    for (std::string variable : unversioned_variables_excluding_condition) {
+        TS::RValue* rvalue = new TS::ExternalVariable(variable, while_parent_struct, recursive_template_arguments);
+        while_parent_struct->add_statement(variable, rvalue);
+    }
+
+    all_template_structs.push_back(while_body_struct);
+    all_template_structs.push_back(while_parent_struct);
+    all_template_structs.push_back(while_parent_false_struct);
+
+    TS::RValue* condition_rvalue_in_outer_struct = this->get_rvalue_from_binary_operation_node(condition, template_struct);
+    template_struct->retrieve_local_variables_from_child(while_parent_struct, {condition_rvalue_in_outer_struct});
+}
+
 void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct) {
     switch (node->node_type) {
         case SyntaxTreeNodeType::ASSIGNMENT:
@@ -166,6 +215,8 @@ void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStru
             return process_statement_sequence_node(dynamic_cast<StatementSequenceNode*>(node), template_struct);
         case SyntaxTreeNodeType::IF_ELSE:
             return process_if_else_node(dynamic_cast<IfElseNode*>(node), template_struct);
+        case SyntaxTreeNodeType::WHILE:
+            return process_while_node(dynamic_cast<WhileNode*>(node), template_struct);
         default: {
             std::cerr << "Syntax tree node type not handled\n";
             throw std::exception();

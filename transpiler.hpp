@@ -22,14 +22,16 @@ private:
     void process_assignment_node(AssignmentNode* node, TS::TemplateStruct* template_struct);
     void process_statement_sequence_node(StatementSequenceNode* node, TS::TemplateStruct* template_struct); 
     void process_if_else_node(IfElseNode* node, TS::TemplateStruct* template_struct);
+    void process_while_node(WhileNode* node, TS::TemplateStruct* template_struct);
     void process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct);
     void print_all_template_structs();
 
     int unique_struct_name_counter = 0;
-    std::string make_unique_struct_name(std::string base_name);
+    std::string create_unique_struct_name(std::string base_name);
 
 public:
     Transpiler(std::string input_file_path) : input_file_path(input_file_path) {}
     void run();
 };
+
 #endif

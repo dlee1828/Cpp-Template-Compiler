@@ -6,20 +6,32 @@ TS::TemplateStruct::TemplateStruct(
     std::string name, 
     std::vector<std::string> template_parameters, 
     std::vector<std::string> template_arguments, 
-    TS::TemplateStruct* base_template_struct
+    TS::TemplateStruct* base_template_struct,
+    std::set<std::string> variables_to_ignore_in_base_template_struct
 ) : name(name)
 {
+    print("Constructing template struct with name", name);
+    print("Variables to ignore:");
+    for (auto v : variables_to_ignore_in_base_template_struct) {
+        print(v);
+    }
+
     for (std::string& param : template_parameters) 
         variable_versions[param] = 0; // version 0 is reserved for template parameters
 
     if (base_template_struct != nullptr) {
         std::vector<std::string> unversioned_variable_names = base_template_struct->get_all_unversioned_variable_names();
-        template_parameters.insert(template_parameters.end(), unversioned_variable_names.begin(), unversioned_variable_names.end());
+        for (std::string var : unversioned_variable_names) {
+            if (variables_to_ignore_in_base_template_struct.find(var) == variables_to_ignore_in_base_template_struct.end()) 
+                template_parameters.push_back(var);
+        }
 
         for (std::string& param : unversioned_variable_names) {
-            print("About to set", param, "to 0");
-            variable_versions[param] = 0;
-            add_statement(param, new InternalVariable(param));
+            if (variables_to_ignore_in_base_template_struct.find(param) == variables_to_ignore_in_base_template_struct.end()) {
+                print("About to set", param, "to 0");
+                variable_versions[param] = 0;
+                add_statement(param, new InternalVariable(param));
+            }
         }
 
         if (template_arguments.size() > 0) {
@@ -59,7 +71,7 @@ std::string TS::TemplateStruct::get_versioned_variable_name(const std::string& v
         throw std::exception();
     }
 
-    if (this->variables_are_finalized) return variable_name + "_final";
+    if (this->variables_are_final) return variable_name + "_final";
 
     int version_number = variable_versions[variable_name];
     if (version_number == 0) return variable_name;
@@ -150,7 +162,7 @@ std::vector<std::string> TS::TemplateStruct::get_all_versioned_variable_names() 
 
 void TS::TemplateStruct::retrieve_local_variables_from_child(TS::TemplateStruct* child_template_struct, std::vector<TS::RValue*> template_arguments) {
     print("Retrieving local variables from", child_template_struct->get_name(), "to", this->get_name());
-    std::vector<std::string> versioned_variable_names = get_all_versioned_variable_names();
+    std::vector<std::string> versioned_variable_names = this->get_all_versioned_variable_names();
     print("Successfully got all versioned variable names");
     std::vector<TS::RValue*> variable_name_rvalues;
     for (std::string variable_name : versioned_variable_names)
@@ -175,7 +187,11 @@ void TS::TemplateStruct::add_final_value_assignments() {
     for (auto [unversioned_variable_name, _] : this->variable_versions) 
         assignment_values[unversioned_variable_name] = this->get_versioned_variable_name(unversioned_variable_name);
 
-    this->variables_are_finalized = true;
+    this->variables_are_final = true;
     for (auto [unversioned_variable_name, _] : this->variable_versions)
         this->add_statement(unversioned_variable_name, new InternalVariable(assignment_values[unversioned_variable_name]));
+}
+
+void TS::TemplateStruct::set_values_as_final() {
+    this->variables_are_final = true;
 }

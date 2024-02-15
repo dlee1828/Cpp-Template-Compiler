@@ -45,7 +45,7 @@ namespace TS {
         std::string unversioned_variable_name;
         TemplateStruct* external_template_struct;
         std::vector<RValue*> template_arguments;
-        ExternalVariable(std::string unversioned_variable_name, TemplateStruct* external_template_struct, std::vector<RValue*> template_arguments) : 
+        ExternalVariable(std::string unversioned_variable_name, TemplateStruct* external_template_struct, std::vector<RValue*> template_arguments = {}) : 
         RValue(RValueType::INTERNAL_VARIABLE), 
         unversioned_variable_name(unversioned_variable_name), 
         external_template_struct(external_template_struct), 
@@ -71,10 +71,16 @@ namespace TS {
         std::vector<std::string> template_arguments;
         std::vector<Statement> statements;
         std::map<std::string, int> variable_versions;
-        bool variables_are_finalized = false;
+        bool variables_are_final = false;
         std::string add_or_update_variable(const std::string& variable_name); 
     public:
-        TemplateStruct(std::string name, std::vector<std::string> template_parameters = {}, std::vector<std::string> template_arguments = {}, TS::TemplateStruct* base_template_struct = nullptr);
+        TemplateStruct(
+            std::string name, 
+            std::vector<std::string> template_parameters = {}, 
+            std::vector<std::string> template_arguments = {}, 
+            TS::TemplateStruct* base_template_struct = nullptr,
+            std::set<std::string> variables_to_ignore_in_base_template_struct = {}
+        );
         void add_statement(std::string unversioned_variable_name, RValue* rvalue);
         std::string get_versioned_variable_name(const std::string& variable_name);
         void write_to_file(std::ofstream& file);
@@ -85,6 +91,7 @@ namespace TS {
         std::vector<std::string> get_template_parameters() { return this->template_parameters; }
         std::string get_name() { return this->name; }
         void add_final_value_assignments();
+        void set_values_as_final();
     };
 }
 

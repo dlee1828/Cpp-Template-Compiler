@@ -1,5 +1,13 @@
 #include <iostream>
 
+void func() {
+  while (n != 1) {
+    if (n % 2 == 0) n /= 2;
+    else n = 3 * n + 1;
+  }
+}
+
+
 template <int n> struct collatz_update {
   static constexpr int n_value = (n % 2 == 0) ? n / 2 : 3 * n + 1;
 };
@@ -25,5 +33,5 @@ template <int n> struct collatz<n, false> {
 };
 
 int main() { 
-	collatz<100, true>::run();
+	collatz<100, collatz_condition<>>::run();
 }
