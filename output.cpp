@@ -59,7 +59,7 @@ struct while_body_1 {
 template <int condition, int a>
 struct while_parent_0 {
 	static constexpr int a_1 = a;
-	static constexpr int a_final = while_parent_0<LESS<a_1, 10>::value_1, while_body_1<a_1>::a_final>::a_final;
+	static constexpr int a_final = while_parent_0<LESS<while_body_1<a_1>::a_final, 10>::value_1, while_body_1<a_1>::a_final>::a_final;
 };
 template <int a>
 struct while_parent_0<0, a> {
@@ -72,7 +72,8 @@ struct root {
 };
 
 #include <iostream>
-int main() {
+
+int main () {
 	std::cout << root::a_2 << std::endl;
 	return 0;
 }
