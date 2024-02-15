@@ -180,9 +180,9 @@ void Transpiler::process_while_node(WhileNode* node, TS::TemplateStruct* templat
         if (variable != "condition") unversioned_variables_excluding_condition.push_back(variable);
     }
 
-    std::vector<TS::RValue*> internal_variable_rvalues;
+    std::vector<TS::RValue*> while_body_template_arguments;
     for (std::string variable : unversioned_variables_excluding_condition) {
-        internal_variable_rvalues.push_back(new TS::InternalVariable(while_parent_struct->get_versioned_variable_name(variable)));
+        while_body_template_arguments.push_back(new TS::InternalVariable(while_parent_struct->get_versioned_variable_name(variable)));
     }
 
     BinaryOperationNode* condition_node = dynamic_cast<BinaryOperationNode*>(node->condition);
@@ -190,19 +190,18 @@ void Transpiler::process_while_node(WhileNode* node, TS::TemplateStruct* templat
     TS::RValue* right_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(condition_node->right_operand), while_parent_struct);
     if (left_rvalue->type == TS::RValueType::INTERNAL_VARIABLE) {
         std::string unversioned_variable_name = dynamic_cast<OperandNode*>(condition_node->left_operand)->identifier_value;
-        left_rvalue = new TS::ExternalVariable(unversioned_variable_name, while_body_struct, internal_variable_rvalues);
+        left_rvalue = new TS::ExternalVariable(unversioned_variable_name, while_body_struct, while_body_template_arguments);
     }
     if (right_rvalue->type == TS::RValueType::INTERNAL_VARIABLE) {
         std::string unversioned_variable_name = dynamic_cast<OperandNode*>(condition_node->right_operand)->identifier_value;
-        right_rvalue = new TS::ExternalVariable(unversioned_variable_name, while_body_struct, internal_variable_rvalues);
+        right_rvalue = new TS::ExternalVariable(unversioned_variable_name, while_body_struct, while_body_template_arguments);
     }
     TS::RValue* condition_rvalue_in_parent_struct = new TS::ExternalVariable("value", binary_operation_template_structs[condition->operation], {left_rvalue, right_rvalue});
 
     std::vector<TS::RValue*> while_parent_template_arguments = {condition_rvalue_in_parent_struct};
-
     for (std::string variable : unversioned_variables_excluding_condition) {
         while_parent_template_arguments.push_back(
-            new TS::ExternalVariable(variable, while_body_struct, internal_variable_rvalues)
+            new TS::ExternalVariable(variable, while_body_struct, while_body_template_arguments)
         );
     }
 
