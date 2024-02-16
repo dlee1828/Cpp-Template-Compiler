@@ -9,20 +9,21 @@
 #include <iostream>
 
 class Interpreter {
-private:
+public:
     using Token = std::string;
     using Line = std::vector<Token>;
+    struct FunctionData {
+        SyntaxTreeNode* body;
+        std::vector<Token> parameters;
+    };
+    using FunctionMap = std::map<Token, FunctionData>;
+private:
     std::string input_file_path;
     Variables variables;
     std::vector<Line> lines;
     int total_lines;
 
-    struct FunctionData {
-        SyntaxTreeNode* body;
-        std::vector<Token> parameters;
-    };
 
-    using FunctionMap = std::map<Token, FunctionData>;
     FunctionMap function_map;
 
     enum StatementNodeType {
@@ -77,6 +78,7 @@ private:
 public:
     Interpreter(std::string input_file_path) : input_file_path(input_file_path), variables(Variables()) {}
     SyntaxTreeNode* generate_syntax_tree();
+    FunctionMap get_function_map() { return function_map; }
 };
 
 std::ostream& operator<<(std::ostream& o, Interpreter::Line& line);

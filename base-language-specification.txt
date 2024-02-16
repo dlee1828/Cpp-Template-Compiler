@@ -42,6 +42,7 @@ A function does not have to have a return statement, but if it does,
 the return value must be a literal, variable, binary operation, or function call.
 Functions are not able to access any variables outside their scope.
 Functions cannot be recursive.
+The arguments for a function call must be variables or literal values.
 
 Finally, you can use print() to print things.
 The argument to print must be a literal, variable, binary operation, or function call.

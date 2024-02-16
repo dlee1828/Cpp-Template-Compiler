@@ -50,39 +50,12 @@ template <int x, int y>
 struct OR {
 	static constexpr int value_1 = x || y;
 };
-template <int a, int sum>
-struct while_body_1 {
-	static constexpr int a_1 = a;
-	static constexpr int sum_1 = sum;
-	static constexpr int sum_2 = ADD<sum_1, a_1>::value_1;
-	static constexpr int a_2 = ADD<a_1, 1>::value_1;
-	static constexpr int a_final = a_2;
-	static constexpr int sum_final = sum_2;
-};
-template <int condition, int a, int sum>
-struct while_parent_0 {
-	static constexpr int a_1 = a;
-	static constexpr int sum_1 = sum;
-	static constexpr int a_final = while_parent_0<LESS_EQUAL<while_body_1<a_1, sum_1>::a_final, 100>::value_1, while_body_1<a_1, sum_1>::a_final, while_body_1<a_1, sum_1>::sum_final>::a_final;
-	static constexpr int sum_final = while_parent_0<LESS_EQUAL<while_body_1<a_1, sum_1>::a_final, 100>::value_1, while_body_1<a_1, sum_1>::a_final, while_body_1<a_1, sum_1>::sum_final>::sum_final;
-};
-template <int a, int sum>
-struct while_parent_0<0, a, sum> {
-	static constexpr int a_1 = a;
-	static constexpr int sum_1 = sum;
-	static constexpr int a_final = a_1;
-	static constexpr int sum_final = sum_1;
+template <int a, int b>
+struct add {
+	static constexpr int return_value_1 = ADD<a, b>::value_1;
+	static constexpr int a_final = a;
+	static constexpr int b_final = b;
+	static constexpr int return_value_final = return_value_1;
 };
 struct root {
-	static constexpr int a_1 = 1;
-	static constexpr int sum_1 = 0;
-	static constexpr int a_2 = while_parent_0<LESS_EQUAL<a_1, 100>::value_1, a_1, sum_1>::a_final;
-	static constexpr int sum_2 = while_parent_0<LESS_EQUAL<a_1, 100>::value_1, a_1, sum_1>::sum_final;
 };
-
-#include <iostream>
-
-int main () {
-	std::cout << root::sum_2 << std::endl;
-	return 0;
-}

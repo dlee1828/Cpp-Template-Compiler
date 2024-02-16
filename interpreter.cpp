@@ -224,7 +224,7 @@ SyntaxTreeNode* Interpreter::parse_function_call_node(int& start_line) {
         argument_map[parameters[i]] = argument_nodes[i];
     }
 
-    return new FunctionNode(function_body, argument_map, variables);
+    return new FunctionCallNode(function_body, argument_map, function_name, variables);
 }
 
 SyntaxTreeNode* Interpreter::parse_assignment_node(int& start_line) {

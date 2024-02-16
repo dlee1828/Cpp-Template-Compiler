@@ -111,11 +111,13 @@ struct IfElseNode : SyntaxTreeNode {
     EvaluationResult evaluate();
 };
 
-struct FunctionNode : SyntaxTreeNode {
+struct FunctionCallNode : SyntaxTreeNode {
     SyntaxTreeNode* body;
     std::map<std::string, SyntaxTreeNode*> arguments;
-    FunctionNode(SyntaxTreeNode* body, std::map<std::string, SyntaxTreeNode*> arguments, Variables& variables) : body(body), arguments(arguments), SyntaxTreeNode(FUNCTION_CALL, variables) {}
+    std::string function_name;
+    FunctionCallNode(SyntaxTreeNode* body, std::map<std::string, SyntaxTreeNode*> arguments, std::string function_name, Variables& variables) : body(body), arguments(arguments), function_name(function_name), SyntaxTreeNode(FUNCTION_CALL, variables) {}
     EvaluationResult evaluate();
+    std::string get_function_name() { return function_name; }
 };
 
 struct PrintNode : SyntaxTreeNode {

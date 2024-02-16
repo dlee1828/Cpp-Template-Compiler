@@ -189,7 +189,7 @@ SyntaxTreeNode::EvaluationResult IfElseNode::evaluate() {
     else return else_block->evaluate();
 }
 
-SyntaxTreeNode::EvaluationResult FunctionNode::evaluate() {
+SyntaxTreeNode::EvaluationResult FunctionCallNode::evaluate() {
     std::map<std::string, int> argument_values; 
     for (std::pair<std::string, SyntaxTreeNode*> argument : arguments) {
         std::string& variable_name = argument.first;

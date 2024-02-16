@@ -69,7 +69,7 @@ void Transpiler::create_binary_operation_template_structs() {
     }
 }
 
-TS::RValue* Transpiler::get_operand_rvalue(OperandNode* operand_node, TS::TemplateStruct* template_struct) {
+TS::RValue* Transpiler::get_rvalue_from_operand(OperandNode* operand_node, TS::TemplateStruct* template_struct) {
     print("Getting operand rvalue");
     if (operand_node->operand_type == OperandType::IDENTIFIER) {
         print("Operand has type identifier");
@@ -87,8 +87,8 @@ TS::RValue* Transpiler::get_operand_rvalue(OperandNode* operand_node, TS::Templa
 
 TS::RValue* Transpiler::get_rvalue_from_binary_operation_node(BinaryOperationNode* node, TS::TemplateStruct* template_struct) {
     print("Getting rvalue from binary operation node");
-    TS::RValue* left_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(node->left_operand), template_struct);
-    TS::RValue* right_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(node->right_operand), template_struct);
+    TS::RValue* left_rvalue = get_rvalue_from_operand(dynamic_cast<OperandNode*>(node->left_operand), template_struct);
+    TS::RValue* right_rvalue = get_rvalue_from_operand(dynamic_cast<OperandNode*>(node->right_operand), template_struct);
     return new TS::ExternalVariable("value", binary_operation_template_structs[node->operation], {left_rvalue, right_rvalue});
 }
 
@@ -101,7 +101,7 @@ void Transpiler::process_assignment_node(AssignmentNode* node, TS::TemplateStruc
         case SyntaxTreeNodeType::OPERAND: {
             print("Assignment value node type is operand");
             OperandNode* operand_node = dynamic_cast<OperandNode*>(value_node);
-            rvalue = get_operand_rvalue(operand_node, template_struct);
+            rvalue = get_rvalue_from_operand(operand_node, template_struct);
             break;
         }
         case SyntaxTreeNodeType::BINARY_OPERATION: {
@@ -186,8 +186,8 @@ void Transpiler::process_while_node(WhileNode* node, TS::TemplateStruct* templat
     }
 
     BinaryOperationNode* condition_node = dynamic_cast<BinaryOperationNode*>(node->condition);
-    TS::RValue* left_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(condition_node->left_operand), while_parent_struct);
-    TS::RValue* right_rvalue = get_operand_rvalue(dynamic_cast<OperandNode*>(condition_node->right_operand), while_parent_struct);
+    TS::RValue* left_rvalue = get_rvalue_from_operand(dynamic_cast<OperandNode*>(condition_node->left_operand), while_parent_struct);
+    TS::RValue* right_rvalue = get_rvalue_from_operand(dynamic_cast<OperandNode*>(condition_node->right_operand), while_parent_struct);
     if (left_rvalue->type == TS::RValueType::INTERNAL_VARIABLE) {
         std::string unversioned_variable_name = dynamic_cast<OperandNode*>(condition_node->left_operand)->identifier_value;
         left_rvalue = new TS::ExternalVariable(unversioned_variable_name, while_body_struct, while_body_template_arguments);
@@ -219,6 +219,39 @@ void Transpiler::process_while_node(WhileNode* node, TS::TemplateStruct* templat
     template_struct->retrieve_local_variables_from_child(while_parent_struct, {condition_rvalue_in_outer_struct});
 }
 
+void Transpiler::process_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct) {
+    // std::string function_name = node->get_function_name();
+    // Interpreter::FunctionData function_data = this->function_map[function_name];
+    // SyntaxTreeNode* function_body = function_data.body;
+    // std::vector<std::string> parameters = function_data.parameters;
+
+    // TS::TemplateStruct* function_template_struct = new TS::TemplateStruct(
+    //     this->create_unique_struct_name("function_call")
+    // )
+}
+
+void Transpiler::process_return_node(ReturnNode* node, TS::TemplateStruct* template_struct) {
+    TS::RValue* rvalue;
+    switch(node->value->node_type) {
+        case SyntaxTreeNodeType::OPERAND: {
+            rvalue = get_rvalue_from_operand(dynamic_cast<OperandNode*>(node->value), template_struct);
+            break;
+        }
+        case SyntaxTreeNodeType::BINARY_OPERATION: {
+            rvalue = get_rvalue_from_binary_operation_node(dynamic_cast<BinaryOperationNode*>(node->value), template_struct);
+            break;
+        }
+        case SyntaxTreeNodeType::FUNCTION_CALL: {
+            rvalue = nullptr;
+            print("error: not implemented yet");
+            throw std::exception();
+            break;
+        }
+    }
+    template_struct->add_statement("return_value", rvalue);
+    template_struct->add_final_value_assignments();
+}
+
 void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct) {
     switch (node->node_type) {
         case SyntaxTreeNodeType::ASSIGNMENT:
@@ -229,12 +262,32 @@ void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStru
             return process_if_else_node(dynamic_cast<IfElseNode*>(node), template_struct);
         case SyntaxTreeNodeType::WHILE:
             return process_while_node(dynamic_cast<WhileNode*>(node), template_struct);
+        case SyntaxTreeNodeType::FUNCTION_CALL:
+            return process_function_call_node(dynamic_cast<FunctionCallNode*>(node), template_struct); 
+        case SyntaxTreeNodeType::RETURN:
+            return process_return_node(dynamic_cast<ReturnNode*>(node), template_struct);
+        case SyntaxTreeNodeType::EMPTY:
+            return;
         default: {
             std::cerr << "Syntax tree node type not handled\n";
             throw std::exception();
         }
     }
 }
+
+void Transpiler::create_function_definition_template_structs() {
+    for (auto [function_name, function_data] : this->function_map) {
+        SyntaxTreeNode* function_body = function_data.body;
+        std::vector<std::string> function_parameters = function_data.parameters;
+        TS::TemplateStruct* function_definition_template_struct = new TS::TemplateStruct(
+            function_name,
+            function_parameters
+        );
+        process_syntax_tree_node(function_body, function_definition_template_struct);
+        this->all_template_structs.push_back(function_definition_template_struct);
+    }
+}
+
 
 void Transpiler::print_all_template_structs() {
     for (TS::TemplateStruct* template_struct : all_template_structs) {
@@ -244,9 +297,11 @@ void Transpiler::print_all_template_structs() {
 
 void Transpiler::run() {
     create_binary_operation_template_structs();
-
     Interpreter interpreter(input_file_path);
     SyntaxTreeNode* root_node = interpreter.generate_syntax_tree();
+    this->function_map = interpreter.get_function_map();
+    this->create_function_definition_template_structs();
+
     TS::TemplateStruct* root_template_struct = new TS::TemplateStruct("root");
 
     process_syntax_tree_node(root_node, root_template_struct);
