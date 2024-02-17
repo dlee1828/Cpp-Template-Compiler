@@ -30,7 +30,7 @@ TS::TemplateStruct::TemplateStruct(
             if (variables_to_ignore_in_base_template_struct.find(param) == variables_to_ignore_in_base_template_struct.end()) {
                 print("About to set", param, "to 0");
                 variable_versions[param] = 0;
-                add_statement(param, new InternalVariable(param));
+                add_assignment_statement(param, new InternalVariable(param));
             }
         }
 
@@ -59,10 +59,16 @@ std::string TS::BinaryOperationRValue::to_string() {
     return left_operand->to_string() + " " + get_binary_operation_details(operation).symbol + " " + right_operand->to_string();
 }
 
-void TS::TemplateStruct::add_statement(std::string unversioned_variable_name, RValue* rvalue) {
+void TS::TemplateStruct::add_assignment_statement(std::string unversioned_variable_name, RValue* rvalue) {
     print("Adding statement for unversioned variable name", unversioned_variable_name);
     std::string versioned_variable_name = add_or_update_variable(unversioned_variable_name);
-    statements.push_back(Statement(versioned_variable_name, rvalue));
+    statements.push_back(new AssignmentStatement(versioned_variable_name, rvalue));
+}
+
+void TS::TemplateStruct::add_print_statement(RValue* rvalue) {
+    print("Adding print statement");
+    int print_statement_index = this->get_new_print_statement_index();
+    statements.push_back(new PrintStatement(rvalue, print_statement_index));
 }
 
 std::string TS::TemplateStruct::get_versioned_variable_name(const std::string& variable_name) {
@@ -89,11 +95,8 @@ std::string TS::TemplateStruct::add_or_update_variable(const std::string& variab
     return versioned_variable_name;
 }
 
-std::string TS::TemplateStruct::Statement::to_string() {
-    return "static constexpr int " + variable_name + " = " + rvalue->to_string() + ";";
-}
-
 void TS::TemplateStruct::write_to_file(std::ofstream& file) {
+    print("Writing template struct", this->get_name());
     if (this->template_parameters.size() > 0) {
         file << "template <";
         for (int i = 0; i < template_parameters.size(); i++) {
@@ -102,6 +105,7 @@ void TS::TemplateStruct::write_to_file(std::ofstream& file) {
         }
         file << ">" << "\n";
     }
+    print("passed template params");
 
     file << "struct " << name;
 
@@ -113,17 +117,29 @@ void TS::TemplateStruct::write_to_file(std::ofstream& file) {
         }
         file << ">";
     }
+    print("passed template arguments");
 
     file << " {";
     file << "\n";
 
-    for (Statement statement : statements) 
-        file << "\t" << statement.to_string() << "\n";
+    // print("there are", statements.size(), "statements");
+
+    for (Statement* statement : statements) 
+        file << "\t" << statement->to_string() << "\n";
+    
+    print("passed statements");
+
+    // Create aggregate print function
+    file << "\tstatic void print_all() {\n";
+    for (int i = 1; i <= this->number_of_print_statements; i++) {
+        file << "\t\tprint_" << std::to_string(i) << "();\n";
+    }
+    file << "\t}\n";
 
     file << "};\n";
 }
 
-std::string TS::TemplateStruct::get_variable_reference(std::string unversioned_variable_name, std::vector<RValue*> template_arguments, TS::TemplateStruct* base_template_struct) {
+std::string TS::TemplateStruct::get_template_reference_prefix(std::vector<RValue*> template_arguments, TS::TemplateStruct* base_template_struct) {
     std::string result = name;
     if (base_template_struct != nullptr) {
         std::vector<std::string> versioned_variable_names = this->get_all_versioned_variable_names();
@@ -140,8 +156,11 @@ std::string TS::TemplateStruct::get_variable_reference(std::string unversioned_v
         result += ">";
     }
     result += "::";
-    result += get_versioned_variable_name(unversioned_variable_name);
     return result;
+}
+
+std::string TS::TemplateStruct::get_variable_reference(std::string unversioned_variable_name, std::vector<RValue*> template_arguments, TS::TemplateStruct* base_template_struct) {
+    return get_template_reference_prefix(template_arguments, base_template_struct) + get_versioned_variable_name(unversioned_variable_name);
 }
 
 std::vector<std::string> TS::TemplateStruct::get_all_unversioned_variable_names() {
@@ -160,14 +179,17 @@ std::vector<std::string> TS::TemplateStruct::get_all_versioned_variable_names() 
     return result;
 }
 
-void TS::TemplateStruct::retrieve_local_variables_from_child(TS::TemplateStruct* child_template_struct, std::vector<TS::RValue*> template_arguments) {
-    print("Retrieving local variables from", child_template_struct->get_name(), "to", this->get_name());
+
+std::vector<TS::RValue*> TS::TemplateStruct::get_all_local_variable_rvalues() {
     std::vector<std::string> versioned_variable_names = this->get_all_versioned_variable_names();
-    print("Successfully got all versioned variable names");
     std::vector<TS::RValue*> variable_name_rvalues;
     for (std::string variable_name : versioned_variable_names)
         variable_name_rvalues.push_back(new TS::InternalVariable(variable_name));
+    return variable_name_rvalues;
+}
 
+void TS::TemplateStruct::retrieve_local_variables_from_child(TS::TemplateStruct* child_template_struct, std::vector<TS::RValue*> template_arguments) {
+    std::vector<TS::RValue*> variable_name_rvalues = get_all_local_variable_rvalues();
     template_arguments.insert(template_arguments.end(), variable_name_rvalues.begin(), variable_name_rvalues.end());
 
     for (std::string unversioned_variable_name : get_all_unversioned_variable_names()) {
@@ -178,9 +200,15 @@ void TS::TemplateStruct::retrieve_local_variables_from_child(TS::TemplateStruct*
             template_arguments
         );
         print("About to add statement");
-        add_statement(unversioned_variable_name, rvalue);
+        add_assignment_statement(unversioned_variable_name, rvalue);
     }
 }
+
+void TS::TemplateStruct::add_external_print_all_statement(TemplateStruct* external_template_struct, std::vector<RValue*> template_arguments) {
+    int print_statement_index = this->get_new_print_statement_index();
+    statements.push_back(new ExternalPrintAllStatement(external_template_struct, template_arguments, print_statement_index));
+}
+
 
 void TS::TemplateStruct::add_final_value_assignments() {
     std::map<std::string, std::string> assignment_values;
@@ -189,9 +217,23 @@ void TS::TemplateStruct::add_final_value_assignments() {
 
     this->variables_are_final = true;
     for (auto [unversioned_variable_name, _] : this->variable_versions)
-        this->add_statement(unversioned_variable_name, new InternalVariable(assignment_values[unversioned_variable_name]));
+        this->add_assignment_statement(unversioned_variable_name, new InternalVariable(assignment_values[unversioned_variable_name]));
 }
 
 void TS::TemplateStruct::set_values_as_final() {
     this->variables_are_final = true;
+}
+
+std::string TS::TemplateStruct::AssignmentStatement::to_string() {
+    rvalue->to_string();
+    return "static constexpr int " + variable_name + " = " + rvalue->to_string() + ";"; 
+}
+
+std::string TS::TemplateStruct::PrintStatement::to_string() { 
+    return "static void print_" + std::to_string(print_statement_index) + "() { std::cout << " + rvalue->to_string() + " << std::endl; }";
+}
+
+std::string TS::TemplateStruct::ExternalPrintAllStatement::to_string() { 
+    std::string prefix = external_template_struct->get_template_reference_prefix(template_arguments, base_template_struct);
+    return "static void print_" + std::to_string(print_statement_index) + "() { " + prefix + "print_all();" + " }";
 }

@@ -1,5 +1,8 @@
-function add(a, b) {
-    return a + b
+a = 1
+if (a < 2) {
+    a = a + 1
+    print(a)
+} else {
+    b = 100
+    print(b)
 }
-
-x = add(2, 3)

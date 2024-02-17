@@ -15,50 +15,10 @@ std::string Transpiler::create_unique_struct_name(std::string base_name) {
 TS::TemplateStruct* Transpiler::get_binary_operation_template_struct(BinaryOperation operation) {
     TS::TemplateStruct* template_struct = new TS::TemplateStruct(get_binary_operation_details(operation).name, {"x", "y"});
     TS::RValue* binary_operation_rvalue = new TS::BinaryOperationRValue(operation, new TS::InternalVariable("x"), new TS::InternalVariable("y"));
-    template_struct->add_statement("value", binary_operation_rvalue);
+    template_struct->add_assignment_statement("value", binary_operation_rvalue);
     return template_struct;
 }
 
-/*
-a = 1 ->
-struct scope_1 {
-    constexpr int a =  1;
-}
-
-a = 1
-if (a == 1) {
-    b = 2
-} else {
-    b = 1
-}
-
-* struct for a = 1 (main scope)
-* struct for condition (_ == 1)
-* struct for true-body 
-* struct for false-body
-* copy all the body-struct-variables into the main scope 
-
-Okay. So when we write the function for processing an if-else node, we need to pass:
-* the if-else-node
-* a reference to the outer-scope struct
-* All the necessary outer-scope variables that need to be passed in
-* that's all (?)
-
-So in general, we will maintain a vector of these struct-objects, and there will be 
-parent/child relationships between certain ones
-
-The main data-transfer between these struct-objects is the passing of variables
-
-E.g.
-struct scope_1 {
-    int a_1 = 2
-    int a_2 = scope_2::a_2
-}
-
-So how will we handle this variable naming stuff?
-Within each struct-object have a list of variable names which are the ones inherited from the outer scope?
-Also keep track of current latest variable version?
-*/
 void Transpiler::create_binary_operation_template_structs() {
     print("creating binary operation template structs");
     for (int i = 0; i < BinaryOperation::_END; i++) {
@@ -124,7 +84,7 @@ void Transpiler::process_assignment_node(AssignmentNode* node, TS::TemplateStruc
         }
     }
     print("Finished processing assignment node, about to add statement");
-    template_struct->add_statement(variable_name, rvalue);
+    template_struct->add_assignment_statement(variable_name, rvalue);
 }
 
 void Transpiler::process_statement_sequence_node(StatementSequenceNode* node, TS::TemplateStruct* template_struct) {
@@ -160,7 +120,12 @@ void Transpiler::process_if_else_node(IfElseNode* node, TS::TemplateStruct* temp
         all_template_structs.push_back(else_body_template_struct);
     }
 
+    std::vector<TS::RValue*> local_variable_rvalues = template_struct->get_all_local_variable_rvalues();
     template_struct->retrieve_local_variables_from_child(base_body_template_struct, {condition_rvalue});
+
+    std::vector<TS::RValue*> extended_template_arguments = {condition_rvalue};
+    extended_template_arguments.insert(extended_template_arguments.end(), local_variable_rvalues.begin(), local_variable_rvalues.end());
+    template_struct->add_external_print_all_statement(base_body_template_struct, extended_template_arguments);
 
     print("Successfully processed if else node");
 }
@@ -213,9 +178,10 @@ void Transpiler::process_while_node(WhileNode* node, TS::TemplateStruct* templat
     }
 
     while_parent_struct->set_values_as_final();
+    while_parent_struct->add_external_print_all_statement(while_body_struct, {while_body_template_arguments});
     for (std::string variable : unversioned_variables_excluding_condition) {
         TS::RValue* rvalue = new TS::ExternalVariable(variable, while_parent_struct, while_parent_template_arguments);
-        while_parent_struct->add_statement(variable, rvalue);
+        while_parent_struct->add_assignment_statement(variable, rvalue);
     }
 
     all_template_structs.push_back(while_body_struct);
@@ -224,9 +190,11 @@ void Transpiler::process_while_node(WhileNode* node, TS::TemplateStruct* templat
 
     TS::RValue* condition_rvalue_in_outer_struct = this->get_rvalue_from_binary_operation_node(condition, template_struct);
     template_struct->retrieve_local_variables_from_child(while_parent_struct, {condition_rvalue_in_outer_struct});
+    // template_struct->add_external_print_all_statement(while_parent_struct, {condition_rvalue_in_outer_struct}, template_struct);
 }
 
-void Transpiler::process_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct) {
+void Transpiler::process_lone_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct) {
+    // todo later
     return;
 }
 
@@ -240,7 +208,7 @@ TS::RValue* Transpiler::get_rvalue_from_function_call_node(FunctionCallNode* nod
             break;
         }
     }
-    if (!has_return_value) function_template_struct->add_statement("_return_value", new TS::Literal(0));
+    if (!has_return_value) function_template_struct->add_assignment_statement("_return_value", new TS::Literal(0));
 
     std::vector<TS::RValue*> function_argument_rvalues;
     for (auto [_, argument_node] : node->arguments) {
@@ -253,26 +221,38 @@ TS::RValue* Transpiler::get_rvalue_from_function_call_node(FunctionCallNode* nod
     return return_value_rvalue;
 }
 
-void Transpiler::process_return_node(ReturnNode* node, TS::TemplateStruct* template_struct) {
+TS::RValue* Transpiler::get_rvalue_from_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct) {
     TS::RValue* rvalue;
-    switch(node->value->node_type) {
+    switch(node->node_type) {
         case SyntaxTreeNodeType::OPERAND: {
-            rvalue = get_rvalue_from_operand(dynamic_cast<OperandNode*>(node->value), template_struct);
+            rvalue = get_rvalue_from_operand(dynamic_cast<OperandNode*>(node), template_struct);
             break;
         }
         case SyntaxTreeNodeType::BINARY_OPERATION: {
-            rvalue = get_rvalue_from_binary_operation_node(dynamic_cast<BinaryOperationNode*>(node->value), template_struct);
+            rvalue = get_rvalue_from_binary_operation_node(dynamic_cast<BinaryOperationNode*>(node), template_struct);
             break;
         }
         case SyntaxTreeNodeType::FUNCTION_CALL: {
-            rvalue = nullptr;
-            print("error: not implemented yet");
-            throw std::exception();
+            rvalue = get_rvalue_from_function_call_node(dynamic_cast<FunctionCallNode*>(node), template_struct);
             break;
         }
+        default : {
+            print("error: node type not handled in get_rvalue_from_syntax_tree_node");
+            throw std::exception();
+        }
     }
-    template_struct->add_statement("_return_value", rvalue);
+    return rvalue;
+}
+
+void Transpiler::process_return_node(ReturnNode* node, TS::TemplateStruct* template_struct) {
+    TS::RValue* rvalue = get_rvalue_from_syntax_tree_node(node->value, template_struct);
+    template_struct->add_assignment_statement("_return_value", rvalue);
     template_struct->add_final_value_assignments();
+}
+
+void Transpiler::process_print_node(PrintNode* node, TS::TemplateStruct* template_struct) {
+    TS::RValue* rvalue = get_rvalue_from_syntax_tree_node(node->value, template_struct);
+    template_struct->add_print_statement(rvalue);
 }
 
 void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct) {
@@ -286,9 +266,11 @@ void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStru
         case SyntaxTreeNodeType::WHILE:
             return process_while_node(dynamic_cast<WhileNode*>(node), template_struct);
         case SyntaxTreeNodeType::FUNCTION_CALL:
-            return process_function_call_node(dynamic_cast<FunctionCallNode*>(node), template_struct); 
+            return process_lone_function_call_node(dynamic_cast<FunctionCallNode*>(node), template_struct); 
         case SyntaxTreeNodeType::RETURN:
             return process_return_node(dynamic_cast<ReturnNode*>(node), template_struct);
+        case SyntaxTreeNodeType::PRINT:
+            return process_print_node(dynamic_cast<PrintNode*>(node), template_struct);
         case SyntaxTreeNodeType::EMPTY:
             return;
         default: {
@@ -303,7 +285,7 @@ void Transpiler::create_function_definition_template_structs() {
         SyntaxTreeNode* function_body = function_data.body;
         std::vector<std::string> function_parameters = function_data.parameters;
         TS::TemplateStruct* function_definition_template_struct = new TS::TemplateStruct(
-            function_name,
+            "FUNCTION_" + function_name,
             function_parameters
         );
         process_syntax_tree_node(function_body, function_definition_template_struct);
@@ -311,7 +293,6 @@ void Transpiler::create_function_definition_template_structs() {
         this->all_template_structs.push_back(function_definition_template_struct);
     }
 }
-
 
 void Transpiler::print_all_template_structs() {
     for (TS::TemplateStruct* template_struct : all_template_structs) {
@@ -334,7 +315,11 @@ void Transpiler::run() {
 
     output.open("output.cpp");
 
+    output << "#include <iostream>\n\n";
+
+    print("printing all template structs");
     print_all_template_structs();
+    print("finished printing all template structs");
 
     output.close();
 }

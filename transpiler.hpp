@@ -27,8 +27,10 @@ private:
     void process_if_else_node(IfElseNode* node, TS::TemplateStruct* template_struct);
     void process_while_node(WhileNode* node, TS::TemplateStruct* template_struct);
     TS::RValue* get_rvalue_from_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct);
-    void process_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct);
+    TS::RValue* get_rvalue_from_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct);
+    void process_lone_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct);
     void process_return_node(ReturnNode* node, TS::TemplateStruct* template_struct);
+    void process_print_node(PrintNode* node, TS::TemplateStruct* template_struct);
     void process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct);
     void print_all_template_structs();
 
