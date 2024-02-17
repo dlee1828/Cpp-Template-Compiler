@@ -16,7 +16,7 @@ public:
         SyntaxTreeNode* body;
         std::vector<Token> parameters;
     };
-    using FunctionMap = std::map<Token, FunctionData>;
+    using FunctionDataMap = std::map<Token, FunctionData>;
 private:
     std::string input_file_path;
     Variables variables;
@@ -24,7 +24,7 @@ private:
     int total_lines;
 
 
-    FunctionMap function_map;
+    FunctionDataMap function_map;
 
     enum StatementNodeType {
         ASSIGNMENT,
@@ -78,7 +78,7 @@ private:
 public:
     Interpreter(std::string input_file_path) : input_file_path(input_file_path), variables(Variables()) {}
     SyntaxTreeNode* generate_syntax_tree();
-    FunctionMap get_function_map() { return function_map; }
+    FunctionDataMap get_function_map() { return function_map; }
 };
 
 std::ostream& operator<<(std::ostream& o, Interpreter::Line& line);

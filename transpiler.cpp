@@ -110,8 +110,15 @@ void Transpiler::process_assignment_node(AssignmentNode* node, TS::TemplateStruc
             rvalue = get_rvalue_from_binary_operation_node(binary_operation_node, template_struct);
             break;
         }
+        case SyntaxTreeNodeType::FUNCTION_CALL: {
+            print("Assignment value node type is function call");
+            FunctionCallNode* function_call_node = dynamic_cast<FunctionCallNode*>(value_node);
+            rvalue = get_rvalue_from_function_call_node(function_call_node, template_struct);
+            break;
+        }
         default: {
             std::cerr << "Unhandled assignment value node type";
+            std::cout << value_node->node_type << std::endl;
             throw std::exception();
             break;
         }
@@ -220,14 +227,30 @@ void Transpiler::process_while_node(WhileNode* node, TS::TemplateStruct* templat
 }
 
 void Transpiler::process_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct) {
-    // std::string function_name = node->get_function_name();
-    // Interpreter::FunctionData function_data = this->function_map[function_name];
-    // SyntaxTreeNode* function_body = function_data.body;
-    // std::vector<std::string> parameters = function_data.parameters;
+    return;
+}
 
-    // TS::TemplateStruct* function_template_struct = new TS::TemplateStruct(
-    //     this->create_unique_struct_name("function_call")
-    // )
+TS::RValue* Transpiler::get_rvalue_from_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct) {
+    TS::TemplateStruct* function_template_struct = function_template_struct_map[node->function_name];
+    // Get return value if it exists
+    bool has_return_value = false;
+    for (std::string unversioned_variable_name : function_template_struct->get_all_unversioned_variable_names()) {
+        if (unversioned_variable_name == "_return_value") {
+            has_return_value = true;
+            break;
+        }
+    }
+    if (!has_return_value) function_template_struct->add_statement("_return_value", new TS::Literal(0));
+
+    std::vector<TS::RValue*> function_argument_rvalues;
+    for (auto [_, argument_node] : node->arguments) {
+        // will be in alphabetical order, so can safely pass to template arguments 
+        function_argument_rvalues.push_back(get_rvalue_from_operand(dynamic_cast<OperandNode*>(argument_node), template_struct));
+    }
+
+    TS::RValue* return_value_rvalue = new TS::ExternalVariable("_return_value", function_template_struct, function_argument_rvalues);
+
+    return return_value_rvalue;
 }
 
 void Transpiler::process_return_node(ReturnNode* node, TS::TemplateStruct* template_struct) {
@@ -248,7 +271,7 @@ void Transpiler::process_return_node(ReturnNode* node, TS::TemplateStruct* templ
             break;
         }
     }
-    template_struct->add_statement("return_value", rvalue);
+    template_struct->add_statement("_return_value", rvalue);
     template_struct->add_final_value_assignments();
 }
 
@@ -276,7 +299,7 @@ void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStru
 }
 
 void Transpiler::create_function_definition_template_structs() {
-    for (auto [function_name, function_data] : this->function_map) {
+    for (auto [function_name, function_data] : this->function_data_map) {
         SyntaxTreeNode* function_body = function_data.body;
         std::vector<std::string> function_parameters = function_data.parameters;
         TS::TemplateStruct* function_definition_template_struct = new TS::TemplateStruct(
@@ -284,6 +307,7 @@ void Transpiler::create_function_definition_template_structs() {
             function_parameters
         );
         process_syntax_tree_node(function_body, function_definition_template_struct);
+        function_template_struct_map[function_name] = function_definition_template_struct;
         this->all_template_structs.push_back(function_definition_template_struct);
     }
 }
@@ -299,7 +323,7 @@ void Transpiler::run() {
     create_binary_operation_template_structs();
     Interpreter interpreter(input_file_path);
     SyntaxTreeNode* root_node = interpreter.generate_syntax_tree();
-    this->function_map = interpreter.get_function_map();
+    this->function_data_map = interpreter.get_function_map();
     this->create_function_definition_template_structs();
 
     TS::TemplateStruct* root_template_struct = new TS::TemplateStruct("root");

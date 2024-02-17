@@ -8,7 +8,8 @@
 
 class Transpiler {
 private:
-    Interpreter::FunctionMap function_map;
+    Interpreter::FunctionDataMap function_data_map;
+    std::map<std::string, TS::TemplateStruct*> function_template_struct_map;
     std::vector<TS::TemplateStruct*> all_template_structs;
     std::map<BinaryOperation, TS::TemplateStruct*> binary_operation_template_structs;
     std::string input_file_path;
@@ -25,6 +26,7 @@ private:
     void process_statement_sequence_node(StatementSequenceNode* node, TS::TemplateStruct* template_struct); 
     void process_if_else_node(IfElseNode* node, TS::TemplateStruct* template_struct);
     void process_while_node(WhileNode* node, TS::TemplateStruct* template_struct);
+    TS::RValue* get_rvalue_from_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct);
     void process_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct);
     void process_return_node(ReturnNode* node, TS::TemplateStruct* template_struct);
     void process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct);
