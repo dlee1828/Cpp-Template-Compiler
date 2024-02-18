@@ -12,16 +12,21 @@ class Interpreter {
 public:
     using Token = std::string;
     using Line = std::vector<Token>;
+
     struct FunctionData {
         SyntaxTreeNode* body;
         std::vector<Token> parameters;
+        int index;
     };
+
     using FunctionDataMap = std::map<Token, FunctionData>;
 private:
     std::string input_file_path;
     Variables variables;
     std::vector<Line> lines;
     int total_lines;
+
+    int total_number_of_functions = 0;
 
 
     FunctionDataMap function_map;

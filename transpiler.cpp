@@ -5,6 +5,7 @@
 #include "debug.hpp"
 #include "template-struct.hpp"
 #include <fstream>
+#include <algorithm>
 
 std::string Transpiler::create_unique_struct_name(std::string base_name) {
     std::string unique_name = base_name + "_" + std::to_string(this->unique_struct_name_counter);
@@ -73,6 +74,7 @@ void Transpiler::process_assignment_node(AssignmentNode* node, TS::TemplateStruc
         case SyntaxTreeNodeType::FUNCTION_CALL: {
             print("Assignment value node type is function call");
             FunctionCallNode* function_call_node = dynamic_cast<FunctionCallNode*>(value_node);
+            add_external_print_statement_for_function_call(function_call_node, template_struct);
             rvalue = get_rvalue_from_function_call_node(function_call_node, template_struct);
             break;
         }
@@ -170,17 +172,19 @@ void Transpiler::process_while_node(WhileNode* node, TS::TemplateStruct* templat
     }
     TS::RValue* condition_rvalue_in_parent_struct = new TS::ExternalVariable("value", binary_operation_template_structs[condition->operation], {left_rvalue, right_rvalue});
 
-    std::vector<TS::RValue*> while_parent_template_arguments = {condition_rvalue_in_parent_struct};
+    std::vector<TS::RValue*> while_parent_recursive_access_template_arguments = {condition_rvalue_in_parent_struct};
     for (std::string variable : unversioned_variables_excluding_condition) {
-        while_parent_template_arguments.push_back(
+        while_parent_recursive_access_template_arguments.push_back(
             new TS::ExternalVariable(variable, while_body_struct, while_body_template_arguments)
         );
     }
 
+    while_parent_struct->add_external_print_all_statement(while_body_struct, while_body_template_arguments);
+    while_parent_struct->add_external_print_all_statement(while_parent_struct, while_parent_recursive_access_template_arguments);
     while_parent_struct->set_values_as_final();
-    while_parent_struct->add_external_print_all_statement(while_body_struct, {while_body_template_arguments});
+
     for (std::string variable : unversioned_variables_excluding_condition) {
-        TS::RValue* rvalue = new TS::ExternalVariable(variable, while_parent_struct, while_parent_template_arguments);
+        TS::RValue* rvalue = new TS::ExternalVariable(variable, while_parent_struct, while_parent_recursive_access_template_arguments);
         while_parent_struct->add_assignment_statement(variable, rvalue);
     }
 
@@ -189,35 +193,47 @@ void Transpiler::process_while_node(WhileNode* node, TS::TemplateStruct* templat
     all_template_structs.push_back(while_parent_false_struct);
 
     TS::RValue* condition_rvalue_in_outer_struct = this->get_rvalue_from_binary_operation_node(condition, template_struct);
-    template_struct->retrieve_local_variables_from_child(while_parent_struct, {condition_rvalue_in_outer_struct});
-    // template_struct->add_external_print_all_statement(while_parent_struct, {condition_rvalue_in_outer_struct}, template_struct);
+
+    std::vector<TS::RValue*> add_external_print_all_statement_arguments = template_struct->get_all_local_variable_rvalues();
+    add_external_print_all_statement_arguments.insert(add_external_print_all_statement_arguments.begin(), condition_rvalue_in_outer_struct);
+    template_struct->add_external_print_all_statement(while_parent_struct, add_external_print_all_statement_arguments); 
+
+    TS::RValue* new_condition_rvalue_in_outer_struct = this->get_rvalue_from_binary_operation_node(condition, template_struct);
+
+    template_struct->retrieve_local_variables_from_child(while_parent_struct, {new_condition_rvalue_in_outer_struct});
 }
 
-void Transpiler::process_lone_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct) {
-    // todo later
-    return;
-}
-
-TS::RValue* Transpiler::get_rvalue_from_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct) {
-    TS::TemplateStruct* function_template_struct = function_template_struct_map[node->function_name];
-    // Get return value if it exists
-    bool has_return_value = false;
-    for (std::string unversioned_variable_name : function_template_struct->get_all_unversioned_variable_names()) {
-        if (unversioned_variable_name == "_return_value") {
-            has_return_value = true;
-            break;
-        }
-    }
-    if (!has_return_value) function_template_struct->add_assignment_statement("_return_value", new TS::Literal(0));
-
+std::vector<TS::RValue*> Transpiler::get_function_argument_rvalues(FunctionCallNode* function_call_node, TS::TemplateStruct* template_struct) {
     std::vector<TS::RValue*> function_argument_rvalues;
-    for (auto [_, argument_node] : node->arguments) {
+    for (auto [_, argument_node] : function_call_node->arguments) {
         // will be in alphabetical order, so can safely pass to template arguments 
         function_argument_rvalues.push_back(get_rvalue_from_operand(dynamic_cast<OperandNode*>(argument_node), template_struct));
     }
+    return function_argument_rvalues;
+}
 
+
+void Transpiler::add_external_print_statement_for_function_call(FunctionCallNode* function_call_node, TS::TemplateStruct* template_struct) {
+    print("adding external print statement for function call");
+    TS::TemplateStruct* function_template_struct = function_template_struct_map[function_call_node->function_name];
+    std::vector<TS::RValue*> function_argument_rvalues = get_function_argument_rvalues(function_call_node, template_struct);
+    template_struct->add_external_print_all_statement(function_template_struct, function_argument_rvalues);
+    print("successfully added external print statement for function call");
+}
+
+void Transpiler::process_lone_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct) {
+    add_external_print_statement_for_function_call(node, template_struct);
+}
+
+TS::RValue* Transpiler::get_rvalue_from_function_call_node(FunctionCallNode* node, TS::TemplateStruct* template_struct) {
+    print("getting rvalue from function call");
+    TS::TemplateStruct* function_template_struct = function_template_struct_map[node->function_name];
+    print("function template struct =", function_template_struct);
+
+    std::vector<TS::RValue*> function_argument_rvalues = get_function_argument_rvalues(node, template_struct);
     TS::RValue* return_value_rvalue = new TS::ExternalVariable("_return_value", function_template_struct, function_argument_rvalues);
 
+    print("successfully got rvalue from function call");
     return return_value_rvalue;
 }
 
@@ -245,9 +261,11 @@ TS::RValue* Transpiler::get_rvalue_from_syntax_tree_node(SyntaxTreeNode* node, T
 }
 
 void Transpiler::process_return_node(ReturnNode* node, TS::TemplateStruct* template_struct) {
+    if (node->node_type == SyntaxTreeNodeType::FUNCTION_CALL)
+        add_external_print_statement_for_function_call(dynamic_cast<FunctionCallNode*>(node), template_struct);
+
     TS::RValue* rvalue = get_rvalue_from_syntax_tree_node(node->value, template_struct);
     template_struct->add_assignment_statement("_return_value", rvalue);
-    template_struct->add_final_value_assignments();
 }
 
 void Transpiler::process_print_node(PrintNode* node, TS::TemplateStruct* template_struct) {
@@ -266,6 +284,7 @@ void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStru
         case SyntaxTreeNodeType::WHILE:
             return process_while_node(dynamic_cast<WhileNode*>(node), template_struct);
         case SyntaxTreeNodeType::FUNCTION_CALL:
+            print("Processing lone function call node");
             return process_lone_function_call_node(dynamic_cast<FunctionCallNode*>(node), template_struct); 
         case SyntaxTreeNodeType::RETURN:
             return process_return_node(dynamic_cast<ReturnNode*>(node), template_struct);
@@ -281,23 +300,34 @@ void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStru
 }
 
 void Transpiler::create_function_definition_template_structs() {
-    for (auto [function_name, function_data] : this->function_data_map) {
+    std::vector<std::pair<std::string, Interpreter::FunctionData>> function_data_pairs(this->function_data_map.begin(), this->function_data_map.end());
+
+    sort(function_data_pairs.begin(), function_data_pairs.end(), [](
+        std::pair<std::string, Interpreter::FunctionData>& a, std::pair<std::string, Interpreter::FunctionData>& b) -> bool {
+            return a.second.index < b.second.index;
+        }
+    );
+
+    for (auto [function_name, function_data] : function_data_pairs) {
         SyntaxTreeNode* function_body = function_data.body;
         std::vector<std::string> function_parameters = function_data.parameters;
         TS::TemplateStruct* function_definition_template_struct = new TS::TemplateStruct(
             "FUNCTION_" + function_name,
             function_parameters
         );
+        function_definition_template_struct->add_assignment_statement("_return_value", new TS::Literal(0));
         process_syntax_tree_node(function_body, function_definition_template_struct);
+        function_definition_template_struct->add_final_value_assignments();
         function_template_struct_map[function_name] = function_definition_template_struct;
         this->all_template_structs.push_back(function_definition_template_struct);
     }
 }
 
-void Transpiler::print_all_template_structs() {
+void Transpiler::generate_output_file() {
     for (TS::TemplateStruct* template_struct : all_template_structs) {
         template_struct->write_to_file(output);
     }
+    output << "int main() {\n\troot::print_all();\n\treturn 0;\n}";
 }
 
 void Transpiler::run() {
@@ -318,7 +348,7 @@ void Transpiler::run() {
     output << "#include <iostream>\n\n";
 
     print("printing all template structs");
-    print_all_template_structs();
+    generate_output_file();
     print("finished printing all template structs");
 
     output.close();

@@ -305,8 +305,11 @@ SyntaxTreeNode* Interpreter::parse_function_definition(int& start_line) {
 
     function_map[function_name] = FunctionData {
         .body = function_body_node,
-        .parameters = parameters
+        .parameters = parameters,
+        .index = this->total_number_of_functions,
     };
+
+    this->total_number_of_functions++;
 
     SyntaxTreeNode* empty_node = new EmptyNode(variables);
 

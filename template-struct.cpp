@@ -96,7 +96,6 @@ std::string TS::TemplateStruct::add_or_update_variable(const std::string& variab
 }
 
 void TS::TemplateStruct::write_to_file(std::ofstream& file) {
-    print("Writing template struct", this->get_name());
     if (this->template_parameters.size() > 0) {
         file << "template <";
         for (int i = 0; i < template_parameters.size(); i++) {
@@ -105,7 +104,6 @@ void TS::TemplateStruct::write_to_file(std::ofstream& file) {
         }
         file << ">" << "\n";
     }
-    print("passed template params");
 
     file << "struct " << name;
 
@@ -117,7 +115,6 @@ void TS::TemplateStruct::write_to_file(std::ofstream& file) {
         }
         file << ">";
     }
-    print("passed template arguments");
 
     file << " {";
     file << "\n";
@@ -127,8 +124,6 @@ void TS::TemplateStruct::write_to_file(std::ofstream& file) {
     for (Statement* statement : statements) 
         file << "\t" << statement->to_string() << "\n";
     
-    print("passed statements");
-
     // Create aggregate print function
     file << "\tstatic void print_all() {\n";
     for (int i = 1; i <= this->number_of_print_statements; i++) {
@@ -136,7 +131,7 @@ void TS::TemplateStruct::write_to_file(std::ofstream& file) {
     }
     file << "\t}\n";
 
-    file << "};\n";
+    file << "};\n\n";
 }
 
 std::string TS::TemplateStruct::get_template_reference_prefix(std::vector<RValue*> template_arguments, TS::TemplateStruct* base_template_struct) {
@@ -164,10 +159,13 @@ std::string TS::TemplateStruct::get_variable_reference(std::string unversioned_v
 }
 
 std::vector<std::string> TS::TemplateStruct::get_all_unversioned_variable_names() {
+    print(variable_versions.size());
     std::vector<std::string> result;
     for (auto [variable_name, version_number] : variable_versions) {
+        print(variable_name, version_number);
         result.push_back(variable_name);
     }
+    print("successfully got all unversioned variable names");
     return result;
 }
 
@@ -208,7 +206,6 @@ void TS::TemplateStruct::add_external_print_all_statement(TemplateStruct* extern
     int print_statement_index = this->get_new_print_statement_index();
     statements.push_back(new ExternalPrintAllStatement(external_template_struct, template_arguments, print_statement_index));
 }
-
 
 void TS::TemplateStruct::add_final_value_assignments() {
     std::map<std::string, std::string> assignment_values;
