@@ -4,11 +4,12 @@
 #include "transpiler.hpp"
 
 int main(int argc, char *argv[]) {
-    // if (argc == 1) std::cout << "Please provide a file containing code to interpret." << std::endl;
-    // Interpreter p(argv[1]);
-    // SyntaxTreeNode* n = p.generate_syntax_tree();
-    // n->evaluate();
-    Transpiler x("test.txt");
+    if (argc == 1) {
+        std::cout << "Please provide a file containing code to transpile." << std::endl;
+        return 0;
+    }
+    Transpiler x(argv[1]);
     x.run();
+    std::cout << "Transpiled code written to output.cpp" << std::endl;
     return 0;
 }
