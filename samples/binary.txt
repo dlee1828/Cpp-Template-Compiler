@@ -1,0 +1,23 @@
+function get_greatest_pow_two_under_or_equal(a) {
+    x = 1
+    while (x <= a) {
+        x = x * 2
+    }
+    return x / 2
+}
+
+function print_binary_digits(a) {
+    x = get_greatest_pow_two_under_or_equal(a)
+    while (x > 0) {
+        if (x <= a) {
+            a = a - x
+            print(1)
+        }
+        else {
+            print(0)
+        }
+        x = x / 2
+    }
+}
+
+print_binary_digits(1000000)

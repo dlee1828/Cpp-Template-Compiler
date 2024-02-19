@@ -1,5 +1,5 @@
 A variable name is a word that starts with a letter. 
-All variables have integer types.
+All variables have unsinged integer types.
 
 A variable can only be assigned to one of the following:
 1. A literal value

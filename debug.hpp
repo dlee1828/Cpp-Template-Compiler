@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-#define DEBUG_ON true
+#define DEBUG_ON false
 
 template<typename T>
 concept Printable = requires (T x) {
