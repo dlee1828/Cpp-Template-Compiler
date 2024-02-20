@@ -14,6 +14,9 @@ private:
     std::map<BinaryOperation, TS::TemplateStruct*> binary_operation_template_structs;
     std::string input_file_path;
     std::ofstream output;
+    TS::TemplateStruct* print_wrapper_template_struct = nullptr;
+    TS::TemplateStruct* return_wrapper_template_struct = nullptr;
+
     TS::TemplateStruct* get_binary_operation_template_struct(BinaryOperation operation);
 
     TS::RValue* get_rvalue_from_operand(OperandNode* operand_node, TS::TemplateStruct* template_struct);
@@ -22,6 +25,8 @@ private:
 
     void create_binary_operation_template_structs();
     void create_function_definition_template_structs();
+    void create_print_wrapper_template_struct();
+    void create_return_wrapper_template_struct();
     void process_assignment_node(AssignmentNode* node, TS::TemplateStruct* template_struct);
     void process_statement_sequence_node(StatementSequenceNode* node, TS::TemplateStruct* template_struct); 
     void process_if_else_node(IfElseNode* node, TS::TemplateStruct* template_struct);

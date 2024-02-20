@@ -123,7 +123,7 @@ void TS::TemplateStruct::write_to_file(std::ofstream& file) {
 
     for (Statement* statement : statements) 
         file << "\t" << statement->to_string() << "\n";
-    
+
     // Create aggregate print function
     file << "\tstatic void print_all() {\n";
     for (int i = 1; i <= this->number_of_print_statements; i++) {
@@ -222,7 +222,6 @@ void TS::TemplateStruct::set_values_as_final() {
 }
 
 std::string TS::TemplateStruct::AssignmentStatement::to_string() {
-    rvalue->to_string();
     return "static constexpr int " + variable_name + " = " + rvalue->to_string() + ";"; 
 }
 

@@ -7,6 +7,8 @@
 #include <fstream>
 #include <algorithm>
 
+#define PRINT_WRAPPER_META_VALUE "is_for_print_wrapper"
+
 std::string Transpiler::create_unique_struct_name(std::string base_name) {
     std::string unique_name = base_name + "_" + std::to_string(this->unique_struct_name_counter);
     this->unique_struct_name_counter++;
@@ -30,6 +32,46 @@ void Transpiler::create_binary_operation_template_structs() {
     }
 }
 
+void Transpiler::create_print_wrapper_template_struct() {
+    this->print_wrapper_template_struct = new TS::TemplateStruct("PRINT", {"value", "disable"});
+    Variables empty_variables;
+    BinaryOperationNode* condition = new BinaryOperationNode(
+        BinaryOperation::NOT_EQUAL, 
+        new OperandNode(OperandType::IDENTIFIER, "disable", empty_variables),
+        new OperandNode(OperandType::LITERAL, 1, empty_variables),
+        empty_variables
+    );
+
+    PrintNode* print_node = new PrintNode(new OperandNode(OperandType::IDENTIFIER, "value", empty_variables), empty_variables);
+    print_node->meta = PRINT_WRAPPER_META_VALUE;
+    IfElseNode* if_else_node = new IfElseNode(condition, print_node, new EmptyNode(empty_variables), empty_variables);
+
+    process_syntax_tree_node(if_else_node, print_wrapper_template_struct);
+
+    this->all_template_structs.push_back(print_wrapper_template_struct);
+}
+
+void Transpiler::create_return_wrapper_template_struct() {
+    this->return_wrapper_template_struct = new TS::TemplateStruct("RETURN", {"old_return_value", "new_return_value", "disable"});
+    return_wrapper_template_struct->add_assignment_statement("_return_value", new TS::InternalVariable("old_return_value"));
+    Variables empty_variables;
+    BinaryOperationNode* condition = new BinaryOperationNode(
+        BinaryOperation::NOT_EQUAL, 
+        new OperandNode(OperandType::IDENTIFIER, "disable", empty_variables),
+        new OperandNode(OperandType::LITERAL, 1, empty_variables),
+        empty_variables
+    );
+
+    AssignmentNode* if_assignment_node = new AssignmentNode("_return_value", new OperandNode(OperandType::IDENTIFIER, "new_return_value", empty_variables), empty_variables);
+    IfElseNode* if_else_node = new IfElseNode(condition, if_assignment_node, new EmptyNode(empty_variables), empty_variables);
+
+    process_syntax_tree_node(if_else_node, return_wrapper_template_struct);
+
+    return_wrapper_template_struct->add_final_value_assignments();
+
+    this->all_template_structs.push_back(return_wrapper_template_struct);
+}
+    
 TS::RValue* Transpiler::get_rvalue_from_operand(OperandNode* operand_node, TS::TemplateStruct* template_struct) {
     print("Getting operand rvalue");
     if (operand_node->operand_type == OperandType::IDENTIFIER) {
@@ -264,13 +306,24 @@ void Transpiler::process_return_node(ReturnNode* node, TS::TemplateStruct* templ
     if (node->node_type == SyntaxTreeNodeType::FUNCTION_CALL)
         add_external_print_statement_for_function_call(dynamic_cast<FunctionCallNode*>(node), template_struct);
 
-    TS::RValue* rvalue = get_rvalue_from_syntax_tree_node(node->value, template_struct);
-    template_struct->add_assignment_statement("_return_value", rvalue);
+    TS::RValue* return_value_rvalue = get_rvalue_from_syntax_tree_node(node->value, template_struct);
+    TS::RValue* external_rvalue = new TS::ExternalVariable("_return_value", this->return_wrapper_template_struct, {
+        new TS::InternalVariable(template_struct->get_versioned_variable_name("_return_value")),
+        return_value_rvalue, 
+        new TS::InternalVariable(template_struct->get_versioned_variable_name("_has_returned")),
+    });
+    template_struct->add_assignment_statement("_return_value", external_rvalue);
+    template_struct->add_assignment_statement("_has_returned", new TS::Literal(1));
 }
 
 void Transpiler::process_print_node(PrintNode* node, TS::TemplateStruct* template_struct) {
     TS::RValue* rvalue = get_rvalue_from_syntax_tree_node(node->value, template_struct);
-    template_struct->add_print_statement(rvalue);
+    if (node->meta == PRINT_WRAPPER_META_VALUE)
+        template_struct->add_print_statement(rvalue);
+    else {
+        TS::RValue* has_returned_rvalue = new TS::InternalVariable(template_struct->get_versioned_variable_name("_has_returned"));
+        template_struct->add_external_print_all_statement(this->print_wrapper_template_struct, {rvalue, has_returned_rvalue});
+    }
 }
 
 void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct) {
@@ -289,7 +342,7 @@ void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStru
         case SyntaxTreeNodeType::RETURN:
             return process_return_node(dynamic_cast<ReturnNode*>(node), template_struct);
         case SyntaxTreeNodeType::PRINT:
-            return process_print_node(dynamic_cast<PrintNode*>(node), template_struct);
+            return process_print_node(dynamic_cast<PrintNode*>(node), template_struct); 
         case SyntaxTreeNodeType::EMPTY:
             return;
         default: {
@@ -316,6 +369,7 @@ void Transpiler::create_function_definition_template_structs() {
             function_parameters
         );
         function_definition_template_struct->add_assignment_statement("_return_value", new TS::Literal(0));
+        function_definition_template_struct->add_assignment_statement("_has_returned", new TS::Literal(0));
         process_syntax_tree_node(function_body, function_definition_template_struct);
         function_definition_template_struct->add_final_value_assignments();
         function_template_struct_map[function_name] = function_definition_template_struct;
@@ -331,13 +385,17 @@ void Transpiler::generate_output_file() {
 }
 
 void Transpiler::run() {
-    create_binary_operation_template_structs();
+    this->create_binary_operation_template_structs();
+    this->create_print_wrapper_template_struct();
+    this->create_return_wrapper_template_struct();
     Interpreter interpreter(input_file_path);
     SyntaxTreeNode* root_node = interpreter.generate_syntax_tree();
     this->function_data_map = interpreter.get_function_map();
     this->create_function_definition_template_structs();
 
     TS::TemplateStruct* root_template_struct = new TS::TemplateStruct("root");
+    root_template_struct->add_assignment_statement("_return_value", new TS::Literal(0));
+    root_template_struct->add_assignment_statement("_has_returned", new TS::Literal(0));
 
     process_syntax_tree_node(root_node, root_template_struct);
 

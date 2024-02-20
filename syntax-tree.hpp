@@ -122,6 +122,7 @@ struct FunctionCallNode : SyntaxTreeNode {
 
 struct PrintNode : SyntaxTreeNode {
     SyntaxTreeNode* value; 
+    std::string meta;
     PrintNode(SyntaxTreeNode* value, Variables& variables) : value(value), SyntaxTreeNode(PRINT, variables) {}
     EvaluationResult evaluate();
 };
