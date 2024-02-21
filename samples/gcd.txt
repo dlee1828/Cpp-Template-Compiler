@@ -27,4 +27,7 @@ function gcd(a, b) {
     }
 }
 
+print(gcd(2, 4))
+print(gcd(7, 21))
+print(gcd(44, 57))
 print(gcd(420, 900))

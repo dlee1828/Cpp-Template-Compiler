@@ -1,0 +1,42 @@
+function get_pow_ten(e) {
+    x = 1
+
+    i = 1
+    while (i <= e) {
+        x = x * 10
+        i = i + 1
+    }
+
+    return x
+}
+
+function get_greatest_multiple_leq(m, x) {
+    i = 0
+
+    multiple = i * m
+    next_multiple = multiple + m
+    while (next_multiple <= x) {
+        multiple = next_multiple
+        next_multiple = next_multiple + m
+    }
+
+    return multiple
+}
+
+function round_value(value, digits) {
+    pow_ten = get_pow_ten(digits)
+    greatest_multiple_leq = get_greatest_multiple_leq(pow_ten, value)
+
+    diff_below = value - greatest_multiple_leq
+    diff_above = pow_ten - diff_below
+
+    if (diff_below < diff_above) {
+        return greatest_multiple_leq
+    }
+
+    return greatest_multiple_leq + pow_ten
+}
+
+print(round_value(44, 1))
+print(round_value(777, 2))
+print(round_value(123456, 5))

@@ -18,4 +18,6 @@ function n_choose_k(n, k) {
     return numerator / denominator
 }
 
-print(n_choose_k(10, 5))
+print(n_choose_k(3, 2))
+print(n_choose_k(6, 4))
+print(n_choose_k(10, 3))
