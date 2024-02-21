@@ -13,6 +13,7 @@ private:
     std::vector<TS::TemplateStruct*> all_template_structs;
     std::map<BinaryOperation, TS::TemplateStruct*> binary_operation_template_structs;
     std::string input_file_path;
+    std::string output_file_path;
     std::ofstream output;
     TS::TemplateStruct* print_wrapper_template_struct = nullptr;
     TS::TemplateStruct* return_wrapper_template_struct = nullptr;
@@ -45,7 +46,7 @@ private:
     std::string create_unique_struct_name(std::string base_name);
 
 public:
-    Transpiler(std::string input_file_path) : input_file_path(input_file_path) {}
+    Transpiler(std::string input_file_path, std::string output_file_path) : input_file_path(input_file_path), output_file_path(output_file_path) {}
     void run();
 };
 

@@ -303,7 +303,7 @@ TS::RValue* Transpiler::get_rvalue_from_syntax_tree_node(SyntaxTreeNode* node, T
 }
 
 void Transpiler::process_return_node(ReturnNode* node, TS::TemplateStruct* template_struct) {
-    if (node->node_type == SyntaxTreeNodeType::FUNCTION_CALL)
+    if (node->value->node_type == SyntaxTreeNodeType::FUNCTION_CALL)
         add_external_print_statement_for_function_call(dynamic_cast<FunctionCallNode*>(node), template_struct);
 
     TS::RValue* return_value_rvalue = get_rvalue_from_syntax_tree_node(node->value, template_struct);
@@ -318,6 +318,10 @@ void Transpiler::process_return_node(ReturnNode* node, TS::TemplateStruct* templ
 
 void Transpiler::process_print_node(PrintNode* node, TS::TemplateStruct* template_struct) {
     TS::RValue* rvalue = get_rvalue_from_syntax_tree_node(node->value, template_struct);
+    if (node->value->node_type == SyntaxTreeNodeType::FUNCTION_CALL) {
+        this->add_external_print_statement_for_function_call(dynamic_cast<FunctionCallNode*>(node->value), template_struct);
+    }
+
     if (node->meta == PRINT_WRAPPER_META_VALUE)
         template_struct->add_print_statement(rvalue);
     else {
@@ -364,6 +368,7 @@ void Transpiler::create_function_definition_template_structs() {
     for (auto [function_name, function_data] : function_data_pairs) {
         SyntaxTreeNode* function_body = function_data.body;
         std::vector<std::string> function_parameters = function_data.parameters;
+        sort(function_parameters.begin(), function_parameters.end());
         TS::TemplateStruct* function_definition_template_struct = new TS::TemplateStruct(
             "FUNCTION_" + function_name,
             function_parameters
@@ -401,7 +406,7 @@ void Transpiler::run() {
 
     all_template_structs.push_back(root_template_struct);
 
-    output.open("output.cpp");
+    output.open(this->output_file_path);
 
     output << "#include <iostream>\n\n";
 

@@ -1,0 +1,21 @@
+function factorial(n) {
+    x = 1
+    product = 1
+    while (x <= n) {
+        product = product * x 
+        x = x + 1
+    }
+    return product
+}
+
+function n_choose_k(n, k) {
+    n_factorial = factorial(n)
+    k_factorial = factorial(k)
+    diff = n - k
+    diff_factorial = factorial(diff)
+    numerator = n_factorial
+    denominator = diff_factorial * k_factorial
+    return numerator / denominator
+}
+
+print(n_choose_k(10, 5))
