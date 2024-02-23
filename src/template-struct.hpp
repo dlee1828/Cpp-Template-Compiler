@@ -124,7 +124,7 @@ namespace TS {
         void add_print_statement(RValue* rvalue);
         void add_external_print_all_statement(TS::TemplateStruct* external_template_struct, std::vector<RValue*> template_arguments);
         std::string get_versioned_variable_name(const std::string& variable_name);
-        void write_to_file(std::ofstream& file);
+        void write_to_stream(std::stringstream& stream);
         std::string get_template_reference_prefix(std::vector<RValue*> template_arguments, TS::TemplateStruct* base_template_struct);
         std::string get_variable_reference(std::string unversioned_variable_name, std::vector<RValue*> template_arguments, TS::TemplateStruct* base_template_struct = nullptr);
         std::vector<std::string> get_all_unversioned_variable_names();

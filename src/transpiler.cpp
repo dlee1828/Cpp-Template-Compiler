@@ -382,19 +382,22 @@ void Transpiler::create_function_definition_template_structs() {
     }
 }
 
-void Transpiler::generate_output_file() {
+void Transpiler::write_output_to_stream(std::stringstream& stream) {
     for (TS::TemplateStruct* template_struct : all_template_structs) {
-        template_struct->write_to_file(output);
+        template_struct->write_to_stream(stream);
     }
-    output << "int main() {\n\troot::print_all();\n\treturn 0;\n}";
+    stream << "int main() {\n\troot::print_all();\n\treturn 0;\n}";
 }
 
-void Transpiler::run() {
+std::string Transpiler::run() {
+    std::stringstream output_stream; 
+
     this->create_binary_operation_template_structs();
     this->create_print_wrapper_template_struct();
     this->create_return_wrapper_template_struct();
-    Interpreter interpreter(input_file_path);
+    Interpreter interpreter(input_string);
     SyntaxTreeNode* root_node = interpreter.generate_syntax_tree();
+
     this->function_data_map = interpreter.get_function_map();
     this->create_function_definition_template_structs();
 
@@ -406,13 +409,11 @@ void Transpiler::run() {
 
     all_template_structs.push_back(root_template_struct);
 
-    output.open(this->output_file_path);
-
-    output << "#include <iostream>\n\n";
+    output_stream << "#include <iostream>\n\n";
 
     print("printing all template structs");
-    generate_output_file();
+    write_output_to_stream(output_stream);
     print("finished printing all template structs");
 
-    output.close();
+    return output_stream.str();
 }

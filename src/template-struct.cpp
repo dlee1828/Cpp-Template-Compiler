@@ -1,6 +1,7 @@
 #include "template-struct.hpp"
 #include "debug.hpp"
 #include <iostream>
+#include <sstream>
 
 TS::TemplateStruct::TemplateStruct(
     std::string name, 
@@ -95,43 +96,43 @@ std::string TS::TemplateStruct::add_or_update_variable(const std::string& variab
     return versioned_variable_name;
 }
 
-void TS::TemplateStruct::write_to_file(std::ofstream& file) {
+void TS::TemplateStruct::write_to_stream(std::stringstream& stream) {
     if (this->template_parameters.size() > 0) {
-        file << "template <";
+        stream << "template <";
         for (int i = 0; i < template_parameters.size(); i++) {
-            file << "int " << template_parameters[i];
-            if (i != template_parameters.size() - 1) file << ", ";
+            stream << "int " << template_parameters[i];
+            if (i != template_parameters.size() - 1) stream << ", ";
         }
-        file << ">" << "\n";
+        stream << ">" << "\n";
     }
 
-    file << "struct " << name;
+    stream << "struct " << name;
 
     if (this->template_arguments.size() > 0) {
-        file << "<";
+        stream << "<";
         for (int i = 0; i < template_arguments.size(); i++) {
-            file << template_arguments[i];
-            if (i != template_arguments.size() - 1) file << ", ";
+            stream << template_arguments[i];
+            if (i != template_arguments.size() - 1) stream << ", ";
         }
-        file << ">";
+        stream << ">";
     }
 
-    file << " {";
-    file << "\n";
+    stream << " {";
+    stream << "\n";
 
     // print("there are", statements.size(), "statements");
 
     for (Statement* statement : statements) 
-        file << "\t" << statement->to_string() << "\n";
+        stream << "\t" << statement->to_string() << "\n";
 
     // Create aggregate print function
-    file << "\tstatic void print_all() {\n";
+    stream << "\tstatic void print_all() {\n";
     for (int i = 1; i <= this->number_of_print_statements; i++) {
-        file << "\t\tprint_" << std::to_string(i) << "();\n";
+        stream << "\t\tprint_" << std::to_string(i) << "();\n";
     }
-    file << "\t}\n";
+    stream << "\t}\n";
 
-    file << "};\n\n";
+    stream << "};\n\n";
 }
 
 std::string TS::TemplateStruct::get_template_reference_prefix(std::vector<RValue*> template_arguments, TS::TemplateStruct* base_template_struct) {

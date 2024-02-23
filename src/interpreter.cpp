@@ -59,18 +59,13 @@ void Interpreter::preprocess_input_string(std::string& input_string) {
     }
 }
 
-void Interpreter::read_input_file_and_parse_into_tokens() {
-
-    std::ifstream input_file_stream(input_file_path);
-    std::stringstream input_string_stream;
-    input_string_stream << input_file_stream.rdbuf();
-    std::string input_string = input_string_stream.str();
+void Interpreter::parse_input_into_tokens() {
     preprocess_input_string(input_string);
-    input_string_stream = std::stringstream(input_string);
+    std::stringstream input_stream = std::stringstream(input_string);
 
     std::string line_string;
     Line current_line;
-    while (getline(input_string_stream, line_string)) {
+    while (getline(input_stream, line_string)) {
         current_line.clear();
         std::stringstream line_stream(line_string);
         Token token;
@@ -81,7 +76,6 @@ void Interpreter::read_input_file_and_parse_into_tokens() {
     }
 
     total_lines = lines.size();
-
 }
 
 bool Interpreter::token_is_function_name(Token& token) {
@@ -366,7 +360,7 @@ SyntaxTreeNode* Interpreter::parse_block(int& start_line, int& end_line) {
 }
 
 SyntaxTreeNode* Interpreter::generate_syntax_tree() {
-    read_input_file_and_parse_into_tokens();
+    parse_input_into_tokens();
     int start = 0;
     int end = total_lines - 1;
     SyntaxTreeNode* node = parse_block(start, end);

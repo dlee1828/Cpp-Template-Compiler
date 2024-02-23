@@ -12,9 +12,7 @@ private:
     std::map<std::string, TS::TemplateStruct*> function_template_struct_map;
     std::vector<TS::TemplateStruct*> all_template_structs;
     std::map<BinaryOperation, TS::TemplateStruct*> binary_operation_template_structs;
-    std::string input_file_path;
-    std::string output_file_path;
-    std::ofstream output;
+    std::string input_string;
     TS::TemplateStruct* print_wrapper_template_struct = nullptr;
     TS::TemplateStruct* return_wrapper_template_struct = nullptr;
 
@@ -40,14 +38,14 @@ private:
     void process_return_node(ReturnNode* node, TS::TemplateStruct* template_struct);
     void process_print_node(PrintNode* node, TS::TemplateStruct* template_struct);
     void process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStruct* template_struct);
-    void generate_output_file();
+    void write_output_to_stream(std::stringstream& stream);
 
     int unique_struct_name_counter = 0;
     std::string create_unique_struct_name(std::string base_name);
 
 public:
-    Transpiler(std::string input_file_path, std::string output_file_path) : input_file_path(input_file_path), output_file_path(output_file_path) {}
-    void run();
+    Transpiler(std::string input_string) : input_string(input_string) {}
+    std::string run();
 };
 
 #endif

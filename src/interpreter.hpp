@@ -21,7 +21,7 @@ public:
 
     using FunctionDataMap = std::map<Token, FunctionData>;
 private:
-    std::string input_file_path;
+    std::string input_string;
     Variables variables;
     std::vector<Line> lines;
     int total_lines;
@@ -64,7 +64,7 @@ private:
     SyntaxTreeNode* parse_function_call_node(int& line_number);
     AssignmentValueType get_assignment_value_type(Line& line, int start_index, int end_index);
     void preprocess_input_string(std::string& input_string);
-    void read_input_file_and_parse_into_tokens();
+    void parse_input_into_tokens();
     bool token_is_variable_name(const Token& token);
     int get_literal_value_from_token(const Token& token);
     BinaryOperation binary_operation_token_to_enum(const Token& token);
@@ -81,7 +81,7 @@ private:
     SyntaxTreeNode* parse_function_definition(int& start_line);
     SyntaxTreeNode* parse_block(int& start_line, int& end_line);
 public:
-    Interpreter(std::string input_file_path) : input_file_path(input_file_path), variables(Variables()) {}
+    Interpreter(std::string input_string) : input_string(input_string), variables(Variables()) {}
     SyntaxTreeNode* generate_syntax_tree();
     FunctionDataMap get_function_map() { return function_map; }
 };
