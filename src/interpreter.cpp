@@ -60,6 +60,7 @@ void Interpreter::preprocess_input_string(std::string& input_string) {
 }
 
 void Interpreter::parse_input_into_tokens() {
+    print("Parsing input into tokens");
     preprocess_input_string(input_string);
     std::stringstream input_stream = std::stringstream(input_string);
 
@@ -174,22 +175,31 @@ SyntaxTreeNode* Interpreter::parse_assignment_value_node(int start_line, int sta
 }
 
 Interpreter::FunctionSignatureDetails Interpreter::get_function_signature_details(Line& line, bool is_definition) {
+    print("Getting function signature details");
     int function_name_index = 0;
     if (is_definition) function_name_index = 1;
     else {
-        while (!token_is_function_name(line[function_name_index])) function_name_index++;
+        while (function_name_index < line.size() && !token_is_function_name(line[function_name_index]))  {
+            print("in the while loop");
+            function_name_index++;
+        }
     }
+
+    print("About to get function name");
     Token function_name = line[function_name_index];
+    print("Got function name");
 
     int first_input_index = function_name_index + 2;
     std::vector<Token> input_tokens;
-    for (int i = first_input_index; line[i] != ")"; i++) {
+    for (int i = first_input_index; i < line.size() && line[i] != ")"; i++) {
+        print("In the for loop");
         if (line[i] != ",") {
             Token input = line[i];
             input_tokens.push_back(input);
         }
     }
 
+    print("Done getting function signature details");
     return FunctionSignatureDetails {
         .name = function_name,
         .inputs = input_tokens
@@ -287,6 +297,7 @@ SyntaxTreeNode* Interpreter::parse_print_node(int& start_line) {
 }
 
 SyntaxTreeNode* Interpreter::parse_function_definition(int& start_line) {
+    print("parsing function definition");
     Line& line = lines[start_line];
 
     FunctionSignatureDetails function_signature_details = get_function_signature_details(line, true);
@@ -326,6 +337,7 @@ SyntaxTreeNode* Interpreter::parse_while_node(int& start_line) {
 }
 
 SyntaxTreeNode* Interpreter::parse_single_statement_node(int& start_line) {
+    print("Parsing single statement node");
     Interpreter::StatementNodeType unit_node_type = get_next_statement_node_type(start_line);
     SyntaxTreeNode* node = nullptr;
     switch (unit_node_type) {
@@ -350,6 +362,7 @@ SyntaxTreeNode* Interpreter::parse_single_statement_node(int& start_line) {
 
 
 SyntaxTreeNode* Interpreter::parse_block(int& start_line, int& end_line) {
+    print("Parsing block");
     std::vector<SyntaxTreeNode*> nodes;
     while (start_line <= end_line) {
         SyntaxTreeNode* node = parse_single_statement_node(start_line);
@@ -361,8 +374,10 @@ SyntaxTreeNode* Interpreter::parse_block(int& start_line, int& end_line) {
 
 SyntaxTreeNode* Interpreter::generate_syntax_tree() {
     parse_input_into_tokens();
+    print("Done parsing input into tokens");
     int start = 0;
     int end = total_lines - 1;
+    print("About to run parse_block");
     SyntaxTreeNode* node = parse_block(start, end);
     return node;
 }

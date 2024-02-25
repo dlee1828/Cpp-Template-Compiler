@@ -1,8 +1,10 @@
 <!doctype html>
 <html lang="en-us">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/rison/0.1.0/rison.js"></script>
 
   <head>
     <meta charset="utf-8">
@@ -13,29 +15,33 @@
         padding-left: 50px;
         padding-right: 50px;
       }
-      #input-output {
-        width: 100%;
-        height: 400px;
+      #root {
         display: flex;
+        width: 100%;
+        height: 90vh;
+        gap: 30px;
+      }
+      #left-column {
+        width: 40%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
         gap: 50px;
       }
       #input {
-        width: 40%;
-        height: 100%;
+        height: 50%; 
         tab-size: 4;
       }
-      #output-container {
-        height: 100%;
-        width: 60%;
-        padding: 0px;
-      }
-      #output {
-        height: 400px;
+      #compiler {
+        height: 50%; 
         width: 100%;
       }
-      #compiler {
-        margin-top: 50px;
-        width: 50%;
+      #right-column {
+        width: 60%;
+      }
+      #output {
+        height: 90vh;
+        width: 100%;
       }
       .hljs {
         white-space: pre;
@@ -45,20 +51,16 @@
     </style>
   </head>
   <body>
-    <div id="input-output">
-      <textarea id="input"></textarea>
-      <div id="output-container"> 
-          <pre><code class="language-cpp" id="output" class="language-c++"></code></pre> 
+    <div id="root">
+      <div id="left-column">
+        <textarea id="input"></textarea>
+        <iframe id="compiler" width="800px" height="200px" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),source:''),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0'),(h:executor,i:(argsPanelShown:'1',compilationPanelShown:'0',compiler:g132,compilerName:'',compilerOutShown:'0',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!(),options:'',source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+x86-64+gcc+13.2+(C%2B%2B,+Editor+%231)',t:'0')),k:100,l:'4',n:'0',o:'',s:1,t:'0')),version:4"></iframe>
+      </div>
+      <div id="right-column"> 
+        <pre><code class="language-cpp" id="output" class="language-c++"></code></pre> 
       </div>
     </div>
-    <iframe 
-      frameBorder="0" 
-      height="450px"
-      src="https://onecompiler.com/embed/cpp?availableLanguages=false&hideLanguageSelection=true&hideNew=true&hideNewFileOption=true&disableCopyPaste=true&hideStdin=true&hideResult=false&hideTitle=true&listenToEvents=true&theme=light"
-      width="100%"
-      id="compiler"
-      scrolling=no
-    ></iframe>
+  </body>
   
 </html> 
     <!DOCTYPE html> 

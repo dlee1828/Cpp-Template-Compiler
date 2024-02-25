@@ -31,7 +31,7 @@ const transpile = (input) => {
     const result = func(input)
     return result
   } catch(error) {
-    return "syntax error"
+    return ""
   }
 }
 
@@ -52,23 +52,36 @@ const onInputChange = () => {
       element.dataset.highlighted = "";
   }
   hljs.highlightAll()
-  var iFrame = document.getElementById('compiler');
-  iFrame.contentWindow.postMessage({
-      eventType: 'populateCode',
-      language: 'cpp',
-      files: [
-      {
-        "name": "main.cpp",
-        "content": output
-      }
-  ]
-  }, "*");
+
+  var compiler = document.getElementById('compiler');
+  compiler.src = createCompilerExplorerUrl(output)
 }
 
-const onRunClicked = () => {
-  window.open(getRunLink(), "_blank")
+export function risonify(obj) {
+  return rison.quote(rison.encode_object(obj));
 }
 
+export function unrisonify(text) {
+  return rison.decode_object(decodeURIComponent(text.replace(/\+/g, '%20')));
+}
 
-window.onload = hljs.highlightAll()
+const createCompilerExplorerUrl = (source) => {
+  const encoded = risonify({source})
+  const before = "g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),"
+  const after = "),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0'),(h:executor,i:(argsPanelShown:'1',compilationPanelShown:'0',compiler:g132,compilerName:'',compilerOutShown:'0',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!(),options:'',source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+x86-64+gcc+13.2+(C%2B%2B,+Editor+%231)',t:'0')),k:100,l:'4',n:'0',o:'',s:1,t:'0')),version:4"
+  const totalString = before + encoded + after
+  const compressed = LZString.compressToBase64(totalString);
+  const compressedUriEncoded = encodeURIComponent(compressed)
+  const fullLink = "https://godbolt.org/e?hideEditorToolbars=true#z:" + compressedUriEncoded
+  return fullLink
+}
+
+const onWindowLoad = () => {
+  window.onload = hljs.highlightAll()
+  var string = "This is my compression test.";
+  var compressed = LZString.compressToBase64(string);
+  console.log({compressed})
+}
+
+window.onload = onWindowLoad
 document.getElementById('input').addEventListener('input', onInputChange);
