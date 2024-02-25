@@ -76,19 +76,22 @@ const onSampleSelect = () => {
   const value = element.value
   console.log("here, value is", value)
   switch (value) {
+    case "basic":
+      inputElement.value = basicSample
+      break
     case "count":
       inputElement.value = countSample
-      break;
+      break
     case "power":
       inputElement.value = powerSample
       console.log("got here to this case")
-      break;
+      break
     case "fibonacci":
       inputElement.value = fibonacciSample
-      break;
+      break
     case "primes":
       inputElement.value = primesSample
-      break;
+      break
   }
 }
 
@@ -105,6 +108,12 @@ document.getElementById('sample-select').addEventListener('change', onSampleSele
 document.getElementById('transpile-button').addEventListener('click', onButtonClicked)
 
 // SAMPLES
+
+const basicSample = `a = 1
+b = 2
+c = a + b
+print(c)
+`
 
 const countSample = `function count(n) {
   a = 1
