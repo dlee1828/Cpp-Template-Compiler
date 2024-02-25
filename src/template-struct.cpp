@@ -74,7 +74,7 @@ void TS::TemplateStruct::add_print_statement(RValue* rvalue) {
 
 std::string TS::TemplateStruct::get_versioned_variable_name(const std::string& variable_name) {
     if (variable_versions.find(variable_name) == variable_versions.end()) {
-        std::cerr << "Variable " << variable_name << " does not exist\n";
+        log_error("Variable", variable_name, "does not exist");
         throw std::exception();
     }
 

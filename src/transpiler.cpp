@@ -83,7 +83,7 @@ TS::RValue* Transpiler::get_rvalue_from_operand(OperandNode* operand_node, TS::T
         print("Operand has type literal");
         return new TS::Literal(operand_node->literal_value);
     } else {
-        std::cerr << "Operand node type not handled\n"; 
+        log_error("Operand node type not handled");
         throw std::exception();
     }
 }
@@ -121,8 +121,7 @@ void Transpiler::process_assignment_node(AssignmentNode* node, TS::TemplateStruc
             break;
         }
         default: {
-            std::cerr << "Unhandled assignment value node type";
-            std::cout << value_node->node_type << std::endl;
+            log_error("Unhandled assignment value node type", value_node->node_type);
             throw std::exception();
             break;
         }
@@ -350,7 +349,7 @@ void Transpiler::process_syntax_tree_node(SyntaxTreeNode* node, TS::TemplateStru
         case SyntaxTreeNodeType::EMPTY:
             return;
         default: {
-            std::cerr << "Syntax tree node type not handled\n";
+            log_error("Syntax tree node type not handled");
             throw std::exception();
         }
     }

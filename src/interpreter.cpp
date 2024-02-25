@@ -104,7 +104,7 @@ Interpreter::StatementNodeType Interpreter::get_next_statement_node_type(int& st
     else if (line[0] == "while") return StatementNodeType::WHILE;
     else if (line_is_lone_function_call(line)) return StatementNodeType::LONE_FUNCTION_CALL;
     else {
-        std::cerr << "Error: unidentified unit node type" << std::endl;
+        log_error("Error: unidentified unit node type");
         return ASSIGNMENT;
     }
 }
@@ -124,8 +124,8 @@ BinaryOperation Interpreter::binary_operation_token_to_enum(const Token& token) 
     else if (token == "&&") return BinaryOperation::AND;
     else if (token == "||") return BinaryOperation::OR;
 
-    std::cerr << "Error: unidentified operation token" << std::endl; 
-    return BinaryOperation::ADD;
+    log_error("Error: unidentified operation token");
+    throw std::exception();
 }
 
 bool Interpreter::token_is_variable_name(const Token& token) {
@@ -241,8 +241,8 @@ int Interpreter::get_closing_brace_line(int opening_brace_line) {
         if (num_open_braces == 0) return i;
         i++;
     }
-    std::cerr << "Error: No closing brace found";
-    return -1;
+    log_error("Error: No closing brace found");
+    throw std::exception();
 }
 
 SyntaxTreeNode* Interpreter::parse_braces_block(int& start_line) {
@@ -273,8 +273,8 @@ int Interpreter::get_closing_parenthesis_index(Line& line) {
     for (int i = 0; i < line.size(); i++) {
         if (line[i] == ")") return i;
     }
-    std::cerr << "Error: did not find closing parenthesis when expected to" << std::endl;
-    return -1;
+    log_error("Error: did not find closing parenthesis when expected to");
+    throw std::exception();
 }
 
 SyntaxTreeNode* Interpreter::parse_print_node(int& start_line) {

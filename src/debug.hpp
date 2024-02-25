@@ -4,6 +4,7 @@
 #include <vector>
 
 #define DEBUG_ON false
+#define SHOULD_WRITE_TO_STDERR false
 
 template<typename T>
 concept Printable = requires (T x) {
@@ -32,6 +33,22 @@ void print_impl(T x, Rest... rest) {
 template <typename... T>
 void print(T... args) {
     if (DEBUG_ON) print_impl(args...);
+}
+
+template <Printable T>
+void log_error_impl(T message) { 
+    std::cerr << message << std::endl;
+}
+
+template <Printable T, Printable... Rest>
+void log_error_impl(T message, Rest... rest) { 
+    std::cerr << message << " ";
+    log_error_impl(rest...);
+}
+
+template <Printable... T>
+void log_error(T... args) {
+    if (SHOULD_WRITE_TO_STDERR) log_error_impl(args...);
 }
 
 #endif

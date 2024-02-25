@@ -19,8 +19,8 @@ int Variables::get_variable_value(const std::string& variable_name) {
         VariableMap& variable_map = scoped_variables[i];
         if (variable_map.find(variable_name) != variable_map.end()) return variable_map[variable_name];
     }
-    std::cerr << "ERROR: COULD NOT FIND VALUE FOR VARIABLE " << variable_name << std::endl;
-    return -1;
+    log_error("ERROR: COULD NOT FIND VALUE FOR VARIABLE", variable_name);
+    throw std::exception();
 }
 
 void Variables::assign_variable_and_initialize_if_necessary(const std::string& variable_name, int value) {

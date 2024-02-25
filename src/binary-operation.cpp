@@ -1,5 +1,6 @@
 #include "binary-operation.hpp"
 #include "syntax-tree.hpp"
+#include "debug.hpp"
 BinaryOperationDetails get_binary_operation_details(BinaryOperation operation) {
     switch (operation) {
         case BinaryOperation::ADD:
@@ -29,7 +30,7 @@ BinaryOperationDetails get_binary_operation_details(BinaryOperation operation) {
         case BinaryOperation::OR:
             return BinaryOperationDetails{.symbol = "||", .name = "OR"};
         default: {
-            std::cerr << "Binary operation not handled\n";
+            log_error("Binary operation not handled\n");
             throw std::exception();
         }
     }
