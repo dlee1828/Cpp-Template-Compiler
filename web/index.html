@@ -14,6 +14,8 @@
       body {
         padding-left: 50px;
         padding-right: 50px;
+        padding-top: 0;
+        margin-top: 0;
       }
       #root {
         display: flex;
@@ -28,9 +30,16 @@
         flex-direction: column;
         gap: 50px;
       }
-      #input {
+      #input-area {
         height: 50%; 
+        width: 100%;
+      }
+      #input {
         tab-size: 4;
+        font-family: monospace;
+        font-size: 16px;
+        height: 100%;
+        width: 100%;
       }
       #compiler {
         height: 50%; 
@@ -42,18 +51,46 @@
       #output {
         height: 90vh;
         width: 100%;
+        position: relative;
+        top: -10px;
       }
       .hljs {
         white-space: pre;
         overflow-x: scroll;
       }
+      #info-text {
+        width: 100%;
+        /* text-align: center; */
+        font-size: large;
+        font-weight: bold;
+        font-family: Arial, Helvetica, sans-serif;
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+      a {
+        color: grey;
+        font-size: 14px;
+      }
       
     </style>
   </head>
   <body>
+    <div id="info-text">
+      C++ Template Transpiler <a href="https://www.google.com">(github)</a>
+    </div>
     <div id="root">
       <div id="left-column">
-        <textarea id="input"></textarea>
+        <div id="input-area">
+          <label for="samples">Choose a sample:</label>
+          <select name="samples" id="sample-select">
+            <option value="">Pick a sample</option>
+            <option value="count">Count</option>
+            <option value="power">Power</option>
+            <option value="fibonacci">Fibonacci</option>
+            <option value="primes">Primes</option>
+          </select>
+          <textarea id="input"></textarea>
+        </div>
         <iframe id="compiler" width="800px" height="200px" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),source:''),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0'),(h:executor,i:(argsPanelShown:'1',compilationPanelShown:'0',compiler:g132,compilerName:'',compilerOutShown:'0',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!(),options:'',source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+x86-64+gcc+13.2+(C%2B%2B,+Editor+%231)',t:'0')),k:100,l:'4',n:'0',o:'',s:1,t:'0')),version:4"></iframe>
       </div>
       <div id="right-column"> 

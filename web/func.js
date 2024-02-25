@@ -35,13 +35,6 @@ const transpile = (input) => {
   }
 }
 
-const getRunLink = () => {
-  const baseString = "https://cpp.sh/?source="
-  const source = document.getElementById("output").textContent
-  const encodedSource = encodeURIComponent(source);
-  return baseString + encodedSource
-}
-
 const onInputChange = () => {
   const input = document.getElementById("input").value
   const output = transpile(input)
@@ -76,12 +69,111 @@ const createCompilerExplorerUrl = (source) => {
   return fullLink
 }
 
+
+const onSampleSelect = () => {
+  const element = document.getElementById("sample-select")
+  const inputElement = document.getElementById("input")
+  const value = element.value
+  console.log("here, value is", value)
+  switch (value) {
+    case "count":
+      inputElement.value = countSample
+      break;
+    case "power":
+      inputElement.value = powerSample
+      console.log("got here to this case")
+      break;
+    case "fibonacci":
+      inputElement.value = fibonacciSample
+      break;
+    case "primes":
+      inputElement.value = primesSample
+      break;
+  }
+  onInputChange()
+}
+
 const onWindowLoad = () => {
   window.onload = hljs.highlightAll()
-  var string = "This is my compression test.";
-  var compressed = LZString.compressToBase64(string);
-  console.log({compressed})
 }
 
 window.onload = onWindowLoad
 document.getElementById('input').addEventListener('input', onInputChange);
+document.getElementById('sample-select').addEventListener('change', onSampleSelect);
+
+// SAMPLES
+
+const countSample = `function count(n) {
+  a = 1
+  while (a <= n) {
+    print(a)
+    a = a + 1
+  }
+}
+
+count(10)`
+
+const powerSample = `function pow(a, b) {
+  i = 0
+  result = 1
+  while (i < b) {
+    result = result * a
+    i = i + 1
+  }
+  return result
+}
+
+print(pow(5, 0))
+print(pow(12, 2))
+print(pow(2, 10))`
+
+const fibonacciSample = `function print_fibonacci_sequence(n) {
+  a = 0
+  b = 1
+  i = 0
+  while (i < n) {
+      print(a)
+      temp = a
+      a = b
+      b = temp + b
+      i = i + 1
+  }
+}
+
+print_fibonacci_sequence(20)`
+
+const primesSample = `function count_divisors(n) {
+  count = 0
+  a = 1
+  while (a <= n) {
+      remainder = n % a
+      if (remainder == 0) {
+          count = count + 1
+      }
+      a = a + 1
+  }
+  return count
+}
+
+function check_prime(n) {
+  divisors = count_divisors(n)
+  if (divisors == 2) {
+      return 1
+  }
+  else {
+      return 0
+  }
+}
+
+function print_primes(n) {
+  i = 1
+  while (i <= n) {
+      is_prime = check_prime(i)
+      if (is_prime == 1) {
+          print(i)
+      }
+      i = i + 1
+  }
+}
+
+print_primes(20)`
