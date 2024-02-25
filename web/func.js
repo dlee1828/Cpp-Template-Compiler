@@ -20,7 +20,7 @@ document.getElementById('input').addEventListener('keydown', function(e) {
 
 
 const updateOutputScroll = () => {
-  var div = document.getElementById("output-container");
+  var div = document.getElementById("output");
   div.scrollTop = div.scrollHeight;
 };
 

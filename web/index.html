@@ -20,21 +20,22 @@
         gap: 50px;
       }
       #input {
-        width: 600px;
+        width: 40%;
         height: 100%;
         tab-size: 4;
       }
       #output-container {
-        /* height: 100%;
-        width: 50%; */
+        height: 100%;
+        width: 60%;
+        padding: 0px;
       }
       #output {
-        width: 600px;
         height: 400px;
+        width: 100%;
       }
       #compiler {
         margin-top: 50px;
-        height: 2000px;
+        width: 50%;
       }
       .hljs {
         white-space: pre;
@@ -46,16 +47,17 @@
   <body>
     <div id="input-output">
       <textarea id="input"></textarea>
-      <div id="output-container">
-          <pre><code class="language-cpp" id="output" class="language-c++"></code></pre>
+      <div id="output-container"> 
+          <pre><code class="language-cpp" id="output" class="language-c++"></code></pre> 
       </div>
     </div>
     <iframe 
       frameBorder="0" 
       height="450px"
-      src="https://onecompiler.com/embed/cpp?availableLanguages=false&hideLanguageSelection=true&hideNew=true&hideNewFileOption=true&disableCopyPaste=true&hideStdin=true&hideResult=false&hideTitle=true&listenToEvents=true&theme=dark"
+      src="https://onecompiler.com/embed/cpp?availableLanguages=false&hideLanguageSelection=true&hideNew=true&hideNewFileOption=true&disableCopyPaste=true&hideStdin=true&hideResult=false&hideTitle=true&listenToEvents=true&theme=light"
       width="100%"
       id="compiler"
+      scrolling=no
     ></iframe>
   
 </html> 
