@@ -31,11 +31,11 @@ const transpile = (input) => {
     const result = func(input)
     return result
   } catch(error) {
-    return ""
+    return "Syntax error."
   }
 }
 
-const onInputChange = () => {
+const transpileAndRun = () => {
   const input = document.getElementById("input").value
   const output = transpile(input)
   document.getElementById("output").textContent = output
@@ -90,16 +90,19 @@ const onSampleSelect = () => {
       inputElement.value = primesSample
       break;
   }
-  onInputChange()
 }
 
 const onWindowLoad = () => {
   window.onload = hljs.highlightAll()
 }
 
+const onButtonClicked = () => {
+  transpileAndRun()
+}
+
 window.onload = onWindowLoad
-document.getElementById('input').addEventListener('input', onInputChange);
 document.getElementById('sample-select').addEventListener('change', onSampleSelect);
+document.getElementById('transpile-button').addEventListener('click', onButtonClicked)
 
 // SAMPLES
 

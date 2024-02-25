@@ -28,11 +28,15 @@
         height: 100%;
         display: flex;
         flex-direction: column;
-        gap: 50px;
+        gap: 20px;
       }
       #input-area {
         height: 50%; 
         width: 100%;
+      }
+      #input-header {
+        display: flex;
+        gap: 10px;
       }
       #input {
         tab-size: 4;
@@ -71,6 +75,11 @@
         font-size: 14px;
         color: darkgrey;
       }
+      button {
+        width: 150px;
+        cursor: pointer;
+        font-weight: bold;
+      }
       
     </style>
   </head>
@@ -81,7 +90,7 @@
     <div id="root">
       <div id="left-column">
         <div id="input-area">
-          <div>
+          <div id="input-header">
             <span>
               <label for="samples">Choose a sample:</label>
               <select name="samples" id="sample-select">
@@ -92,9 +101,12 @@
                 <option value="primes">Primes</option>
               </select>
             </span>
-            <a target="_blank" href="https://github.com/dlee1828/Cpp-Template-Compiler/blob/master/notes/base-language-specification.md">(view input language specification)</a>
+            <a target="_blank" href="https://github.com/dlee1828/Cpp-Template-Compiler/blob/master/notes/base-language-specification.md">(input language specification)</a>
+            <button id="transpile-button">Transpile and Run</button>
           </div>
           <textarea id="input"></textarea>
+        </div>
+        <div>
         </div>
         <iframe id="compiler" width="800px" height="200px" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),source:''),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0'),(h:executor,i:(argsPanelShown:'1',compilationPanelShown:'0',compiler:g132,compilerName:'',compilerOutShown:'0',execArgs:'',execStdin:'',fontScale:14,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!(),options:'',source:1,stdinPanelShown:'1',wrap:'1'),l:'5',n:'0',o:'Executor+x86-64+gcc+13.2+(C%2B%2B,+Editor+%231)',t:'0')),k:100,l:'4',n:'0',o:'',s:1,t:'0')),version:4"></iframe>
       </div>
