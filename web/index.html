@@ -15,47 +15,48 @@
       }
       #input-output {
         width: 100%;
-        height: 800px;
+        height: 400px;
         display: flex;
         gap: 50px;
       }
       #input {
-        width: 50%;
+        width: 600px;
         height: 100%;
         tab-size: 4;
       }
-      #output-section {
-        height: 100%;
-        width: 50%;
-      }
       #output-container {
-        height: 800px;
+        /* height: 100%;
+        width: 50%; */
       }
       #output {
-        height: 700px;
+        width: 600px;
+        height: 400px;
+      }
+      #compiler {
+        margin-top: 50px;
+        height: 2000px;
       }
       .hljs {
         white-space: pre;
         overflow-x: scroll;
       }
-      #run-button {
-        margin: 0px;
-        padding: 0px;
-        cursor: pointer;
-      } 
       
     </style>
   </head>
   <body>
     <div id="input-output">
       <textarea id="input"></textarea>
-      <div id="output-section">
       <div id="output-container">
-        <pre><code class="language-cpp" id="output" class="language-c++"></code></pre>
-      </div>
-        <button id="run-button">Run</button>
+          <pre><code class="language-cpp" id="output" class="language-c++"></code></pre>
       </div>
     </div>
+    <iframe 
+      frameBorder="0" 
+      height="450px"
+      src="https://onecompiler.com/embed/cpp?availableLanguages=false&hideLanguageSelection=true&hideNew=true&hideNewFileOption=true&disableCopyPaste=true&hideStdin=true&hideResult=false&hideTitle=true&listenToEvents=true&theme=dark"
+      width="100%"
+      id="compiler"
+    ></iframe>
   
 </html> 
     <!DOCTYPE html> 

@@ -20,7 +20,7 @@ document.getElementById('input').addEventListener('keydown', function(e) {
 
 
 const updateOutputScroll = () => {
-  var div = document.getElementById("output");
+  var div = document.getElementById("output-container");
   div.scrollTop = div.scrollHeight;
 };
 
@@ -52,13 +52,13 @@ const onInputChange = () => {
       element.dataset.highlighted = "";
   }
   hljs.highlightAll()
-  var iFrame = document.getElementById('oc-editor');
+  var iFrame = document.getElementById('compiler');
   iFrame.contentWindow.postMessage({
       eventType: 'populateCode',
-      language: 'python',
+      language: 'cpp',
       files: [
       {
-        "name": "HelloWorld.py",
+        "name": "main.cpp",
         "content": output
       }
   ]
@@ -72,4 +72,3 @@ const onRunClicked = () => {
 
 window.onload = hljs.highlightAll()
 document.getElementById('input').addEventListener('input', onInputChange);
-document.getElementById('run-button').addEventListener('click', onRunClicked);
