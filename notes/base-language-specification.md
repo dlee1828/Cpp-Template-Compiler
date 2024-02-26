@@ -27,7 +27,7 @@ Valid binary operators are:
 
 If statements are written as such:
 ```
-if (\[condition]) {
+if ([condition]) {
 
 }
 else {
